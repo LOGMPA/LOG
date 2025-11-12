@@ -59,7 +59,7 @@ O leitor faz o mapeamento automático das colunas:
 - **Bibliotecas**: `lucide-react` (ícones), `recharts` (gráficos), `@tanstack/react-query` (cache), `xlsx` (Excel).
 - **Estilo**: Tailwind básico com componentes mínimos (Card, Button, Badge, Table, Sidebar).
 
-## Onde trocar coisas rápidas
+## Onde trocar coisas rápidas.
 
 - Senha: `src/AuthGate.jsx`
 - Cores/status: `src/pages/PainelLogistica.jsx`
