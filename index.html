@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel Logística 2026</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="painel">
+<div class="wrap">
+  <div class="nav">
+<a href="index.html" class="active">Painel</a>
+<a href="calendario.html" class="">Calendário</a>
+<a href="registradas.html" class="">Solicitações</a>
+<a href="concluidas.html" class="">Concluídos</a>
+<a href="demo.html" class="">Demonstrações</a>
+</div>
+  <h1 class="title">Painel Logística 2026</h1>
+  <p class="subtitle">Visão geral das operações</p>
+
+  <div class="card">
+    <div class="card-h">Formulários</div>
+    <div class="card-b" style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn" id="formMaquinas" href="#" target="_blank">Solicitação de Frete de Máquinas</a>
+      <a class="btn" id="formPecas" href="#" target="_blank">Solicitação de Frete de Peças/Fracionados</a>
+    </div>
+  </div>
+
+  <div class="grid cols-4" id="kpis" style="margin-top:12px">
+    <div class="kpi"><div class="lbl">RECEBIDO</div><div class="val" id="kpi-recebido">0</div></div>
+    <div class="kpi"><div class="lbl">PROGRAMADO</div><div class="val" id="kpi-programado">0</div></div>
+    <div class="kpi"><div class="lbl">EM ROTA</div><div class="val" id="kpi-emrota">0</div></div>
+    <div class="kpi"><div class="lbl">CONCLUIDO</div><div class="val" id="kpi-concluido">0</div></div>
+  </div>
+
+  <div class="grid cols-3" style="margin-top:12px">
+    <div class="card">
+      <div class="card-h">RECEBIDO</div>
+      <div class="card-b"><div class="list" id="lista-recebido"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h">PROGRAMADO</div>
+      <div class="card-b"><div class="list" id="lista-programado"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h">EM ROTA</div>
+      <div class="card-b"><div class="list" id="lista-emrota"></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="card-h">Custos por cidade (R$ PROP/TERC)</div>
+    <div class="card-b">
+      <canvas id="chart" width="1100" height="260"></canvas>
+      <div class="tiny">Considera R$ TERC quando > 0, senão R$ PROP</div>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
