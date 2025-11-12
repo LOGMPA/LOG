@@ -30,14 +30,7 @@ export default function TransportesConcluidos() {
     if (filtros.dataFim && d > new Date(filtros.dataFim)) return false;
     return true;
   });
-      if (dp < di) return false;
-    }
-    if (filtros.dataFim) {
-      const dp = new Date(s.previsao); const df = new Date(filtros.dataFim);
-      if (dp > df) return false;
-    }
-    return true;
-  });
+
 
   return (
     <div className="p-6 md:p-8 space-y-6">
