@@ -16,7 +16,74 @@ import StatusCard from "../components/logistica/StatusCard";
 import SolicitacaoCard from "../components/logistica/SolicitacaoCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
+/* ======== helpers de data local (sem UTC) ======== */
+const parseBR = (s) => {
+  if (!s) return null;
+  if (s instanceof Date) return s;
+  const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+};
+const monthKeyLocal = (dLike) => {
+  const d = dLike instanceof Date ? dLike : parseBR(dLike);
+  if (!d) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+/* ======== normalização de cidade ======== */
+const NORM = (t) =>
+  String(t || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toUpperCase()
+    .trim();
+
+const CIDADES = [
+  "PONTA GROSSA",
+  "CASTRO",
+  "ARAPOTI",
+  "TIBAGI",
+  "IRATI",
+  "PRUDENTÓPOLIS",
+  "GUARAPUAVA",
+  "QUEDAS DO IGUAÇU",
+];
+const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
+const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
+
+/* ======== cores ======== */
+const COR_TERC = "#FFC107";  // amarelo
+const COR_PROP = "#1B5E20";  // verde escuro
+const GRID_LIGHT = "#ECECEC"; // cinza mais claro no grid
+const BADGE_BG = "#0B2B6B";   // azul-escuro do badge de quantidade
+const BADGE_TEXT = "#FFFFFF";
+
+/* ======== label custom para o badge de quantidade ======== */
+function QtdBadge({ x, y, width, value }) {
+  if (value == null) return null;
+  const w = 24, h = 16;
+  const cx = x + width / 2 - w / 2;
+  const cy = y - h - 2; // encosta na base interna
+  return (
+    <g>
+      <rect x={cx} y={cy} rx={3} ry={3} width={w} height={h} fill={BADGE_BG} />
+      <text
+        x={cx + w / 2}
+        y={cy + h / 2 + 4}
+        textAnchor="middle"
+        fontSize="10"
+        fill={BADGE_TEXT}
+        fontWeight="600"
+      >
+        {value}
+      </text>
+    </g>
+  );
+}
+
 export default function PainelLogistica() {
+  // filtros legados (não mexe)
   const [dataInicio] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [dataFim] = useState(format(new Date(), "yyyy-MM"));
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
@@ -36,24 +103,7 @@ export default function PainelLogistica() {
       maximumFractionDigits: 2,
     })}`;
 
-  // Datas PT-BR no fuso local
-  const parseBR = (s) => {
-    if (!s) return null;
-    if (s instanceof Date) return s;
-    const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
-    const d = new Date(s);
-    return isNaN(d) ? null : d;
-  };
-  const monthKeyLocal = (dLike) => {
-    const d = dLike instanceof Date ? dLike : parseBR(dLike);
-    if (!d) return "";
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
-  };
-
-  // Cards: mesmos contadores (ignora "(D)")
+  /* ======== contadores dos cards (como estavam) ======== */
   const contagemStatus = useMemo(() => {
     const base = solicitacoes.filter((s) => !s._status_up?.includes("(D)"));
     return {
@@ -64,7 +114,7 @@ export default function PainelLogistica() {
     };
   }, [solicitacoes]);
 
-  // Listas por status (sem limite) — inalteradas
+  /* ======== listas de cartões (inalteradas) ======== */
   const recebidos = useMemo(
     () =>
       solicitacoes
@@ -87,59 +137,41 @@ export default function PainelLogistica() {
     [solicitacoes]
   );
 
-  // Ordem fixa das 8 cidades
-  const CIDADES = [
-    "PONTA GROSSA",
-    "CASTRO",
-    "ARAPOTI",
-    "TIBAGI",
-    "IRATI",
-    "PRUDENTÓPOLIS",
-    "GUARAPUAVA",
-    "QUEDAS DO IGUAÇU",
-  ];
-
-  // Gráfico: apenas CONCLUÍDO/CONCLUÍDO (D), mês selecionado, mantém cidades zeradas
+  /* ======== GRÁFICO: só CONCLUÍDO/(D), usa CUSTO CIDADE para lançar valores ======== */
   const dadosCidadesColuna = useMemo(() => {
     const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
 
     for (const s of solicitacoes) {
-      // Só concluídos (com ou sem D)
+      // só concluídos (com ou sem D)
       if (!s._status_up?.includes("CONCL")) continue;
 
       // mês pelo PREV local
       const kMes = s._previsao_date ? monthKeyLocal(s._previsao_date) : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
+      // cidade vem da coluna R:R => "CUSTO CIDADE" (mapeada no loader como custo_cidade)
+      const cidade = canonCidade(s.custo_cidade);
+      if (!cidade) continue; // ignora se não bate com as 8
+
       const valorProp = Number(s.valor_prop || 0);
       const valorTerc = Number(s.valor_terc || 0);
 
-      const origem = CIDADES.includes(s.esta) ? s.esta : null;
-      const destino = CIDADES.includes(s.vai) ? s.vai : null;
-
-      if (origem) {
-        somaProp[origem] += valorProp;
-        somaTerc[origem] += valorTerc;
-      }
-      if (destino && destino !== origem) {
-        somaProp[destino] += valorProp;
-        somaTerc[destino] += valorTerc;
-      }
+      somaProp[cidade] += valorProp;
+      somaTerc[cidade] += valorTerc;
+      qtd[cidade] += 1;
     }
 
-    // mantém todas as cidades, mesmo zeradas
+    // mantém ordem fixa e cidades zeradas
     return CIDADES.map((c) => ({
       cidade: c,
       prop: somaProp[c] || 0,
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
+      qtd: qtd[c] || 0,
     }));
   }, [solicitacoes, mesRef]);
-
-  // Cores do print: Terceiro = amarelo; Próprio = verde escuro
-  const COR_TERC = "#FFC107"; // amarelo
-  const COR_PROP = "#1B5E20"; // verde escuro
 
   return (
     <div className="p-6 md:p-8 space-y-8">
@@ -148,7 +180,7 @@ export default function PainelLogistica() {
         <p className="text-gray-600">Visão geral das operações de transporte solicitadas via Forms.</p>
       </div>
 
-      {/* Cards de status */}
+      {/* Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatusCard status="RECEBIDO" count={contagemStatus.RECEBIDO} icon={Clock} color={statusColors.RECEBIDO} />
         <StatusCard status="PROGRAMADO" count={contagemStatus.PROGRAMADO} icon={Truck} color={statusColors.PROGRAMADO} />
@@ -172,12 +204,14 @@ export default function PainelLogistica() {
         </Card>
       </div>
 
-      {/* Gráfico mensal: SOMENTE CONCLUÍDO/(D), Terceiro+Próprio empilhados, total no topo */}
+      {/* Gráfico mensal: somente CONCLUÍDO/(D), com CUSTO CIDADE, labels e badge */}
       <Card className="border-none shadow-lg">
         <CardHeader className="flex items-center justify-between gap-4">
           <div>
             <CardTitle className="text-xl font-bold text-gray-900">Custos por Cidade (Concluídos)</CardTitle>
-            <p className="text-gray-600">Somente as solicitações que já estão com o status CONCLUÍDO. Segmentos: Terceiro (amarelo) e Próprio (verde).</p>
+            <p className="text-gray-600">
+              Usa <b>CUSTO CIDADE</b> para lançar valores. Segmentos: Terceiro (amarelo) e Próprio (verde). Total no topo.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <label className="text-sm text-gray-700">Mês:</label>
@@ -191,32 +225,58 @@ export default function PainelLogistica() {
         </CardHeader>
 
         <CardContent>
-          <ResponsiveContainer width="100%" height={360}>
-            <BarChart data={dadosCidadesColuna} margin={{ top: 32, right: 16, left: 0, bottom: 28 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+          <ResponsiveContainer width="100%" height={380}>
+            <BarChart data={dadosCidadesColuna} margin={{ top: 36, right: 16, left: 0, bottom: 30 }}>
+              {/* grid pontilhado com cinza ainda mais claro */}
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_LIGHT} />
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
               <YAxis tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`} />
               <Tooltip
                 formatter={(value, name) => {
-                  if (name === "Total") return [moeda(value), "Total"];
-                  if (name === "Terceiro") return [moeda(value), "Terceiro"];
-                  if (name === "Próprio") return [moeda(value), "Próprio"];
+                  if (name === "Total") return [`R$ ${Number(value || 0).toLocaleString("pt-BR")}`, "Total"];
+                  if (name === "Terceiro") return [`R$ ${Number(value || 0).toLocaleString("pt-BR")}`, "Terceiro"];
+                  if (name === "Próprio") return [`R$ ${Number(value || 0).toLocaleString("pt-BR")}`, "Próprio"];
+                  if (name === "Qtd") return [value, "Qtd"];
                   return [value, name];
                 }}
                 labelFormatter={(label) => `Cidade: ${label}`}
               />
 
-              {/* Terceiro (amarelo) + Próprio (verde) empilhados */}
+              {/* Terceiro (amarelo) e Próprio (verde) empilhados */}
               <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
-                <LabelList dataKey="terc" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
+                {/* valores menores, fonte branca */}
+                <LabelList
+                  dataKey="terc"
+                  position="inside"
+                  formatter={(v) => (v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : "")}
+                  fill="#FFFFFF"
+                  style={{ fontSize: 11, fontWeight: 700 }}
+                />
               </Bar>
               <Bar dataKey="prop" name="Próprio" stackId="v" fill={COR_PROP}>
-                <LabelList dataKey="prop" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
+                <LabelList
+                  dataKey="prop"
+                  position="inside"
+                  formatter={(v) => (v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : "")}
+                  fill="#FFFFFF"
+                  style={{ fontSize: 11, fontWeight: 700 }}
+                />
               </Bar>
 
-              {/* Total no topo (barra transparente só para label) */}
+              {/* Badge de quantidade na base interna (um quadradinho azul-escuro, texto branco) */}
+              <Bar dataKey="qtd" name="Qtd" fill="transparent">
+                <LabelList dataKey="qtd" content={<QtdBadge />} />
+              </Bar>
+
+              {/* Total no topo em verde escuro */}
               <Bar dataKey="total" name="Total" fill="transparent">
-                <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
+                <LabelList
+                  dataKey="total"
+                  position="top"
+                  formatter={(v) => (v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : "")}
+                  fill={COR_PROP}
+                  style={{ fontSize: 12, fontWeight: 800 }}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
