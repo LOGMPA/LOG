@@ -35,7 +35,7 @@ const headerMap = {
   "VAI PARA:": "vai_para",
   "OBS": "obs",
   "LOC": "loc",
-  "CUSTO CIDADE": "custo_cidade",
+  "CIDADE CUSTOS": "custo_cidade",
 };
 
 /* ---------------- leitura/normalização ---------------- */
