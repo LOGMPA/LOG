@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useSolicitacoes } from "../hooks/useSolicitacoes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,69 +19,69 @@ export default function SolicitacoesTransporte() {
 
   const { data: solicitacoes = [], isLoading } = useSolicitacoes();
 
-  // helper para normalizar status (remove " (D)")
-  const baseStatusOf = (s) => String(s || "").toUpperCase().replace(/\s*\(D\)\s*/g, "").trim();
+  // status permitido: RECEBIDO / PROGRAMADO / EM ROTA / SUSPENSO (com ou sem "(D)")
+  const allowed = new Set(["RECEBIDO", "PROGRAMADO", "EM ROTA", "SUSPENSO"]);
 
-  // status cores por status "base"
-  const statusColors = {
-    RECEBIDO: "bg-gray-100 text-gray-800",
-    PROGRAMADO: "bg-blue-100 text-blue-800",
-    "EM ROTA": "bg-amber-100 text-amber-800",
-    SUSPENSO: "bg-red-100 text-red-800",
-  };
+  const solicitacoesFiltradas = useMemo(() => {
+    const out = solicitacoes.filter((s) => {
+      // excluir concluídos (com ou sem D)
+      if (s._status_base === "CONCLUIDO") return false;
 
-  const solicitacoesFiltradas = solicitacoes
-    .filter((s) => {
-      const statusUpper = String(s.status || "").toUpperCase();
+      // manter apenas os statuses liberados
+      if (!allowed.has(s._status_base)) return false;
 
-      // 1) Excluir concluidos (com e sem "(D)")
-      if (statusUpper.includes("CONCLUIDO")) return false;
-
-      // 2) Manter apenas RECEBIDO / PROGRAMADO / EM ROTA / SUSPENSO, aceitando variantes "(D)"
-      const base = baseStatusOf(statusUpper);
-      const permitido = ["RECEBIDO", "PROGRAMADO", "EM ROTA", "SUSPENSO"].includes(base);
-      if (!permitido) return false;
-
-      // 3) Filtros por chassi, cliente, solicitante
-      if (filtros.chassi && !s.chassi_lista?.some((c) => c.toLowerCase().includes(filtros.chassi.toLowerCase())))
+      // filtro de chassi
+      if (filtros.chassi && !s.chassi_lista?.some((c) => c.toLowerCase().includes(filtros.chassi.toLowerCase()))) {
         return false;
-      if (filtros.cliente && !String(s.nota || "").toLowerCase().includes(filtros.cliente.toLowerCase()))
+      }
+      // filtro de cliente (nota)
+      if (filtros.cliente && !String(s.nota || "").toLowerCase().includes(filtros.cliente.toLowerCase())) {
         return false;
-      if (filtros.solicitante && !String(s.solicitante || "").toLowerCase().includes(filtros.solicitante.toLowerCase()))
+      }
+      // filtro de solicitante
+      if (filtros.solicitante && !String(s.solicitante || "").toLowerCase().includes(filtros.solicitante.toLowerCase())) {
         return false;
-
-      // 4) Filtro por data (usa previsao)
-      const dp = s.previsao ? new Date(s.previsao) : null;
-      if (!dp) return false;
+      }
+      // filtro de datas por PREV
+      const d = s._previsao_date ? new Date(s._previsao_date) : null;
+      if (!d) return false;
       if (filtros.dataInicio) {
         const di = new Date(filtros.dataInicio);
-        if (dp < di) return false;
+        if (d < di) return false;
       }
       if (filtros.dataFim) {
         const df = new Date(filtros.dataFim);
-        if (dp > df) return false;
+        if (d > df) return false;
       }
-
-      // 5) Filtro por status selecionado (considerando "(D)")
+      // filtro de status específico (se selecionar no dropdown)
       if (filtros.status !== "all") {
-        const baseFiltro = baseStatusOf(filtros.status);
-        if (base !== baseFiltro) return false;
+        // compara com o status exibido original (mantém (D) se existir)
+        if (String(s.status) !== filtros.status) return false;
       }
-
       return true;
-    })
-    // Ordenação: Suspensos sempre por último; restante do mais antigo pro mais novo pela previsao
-    .sort((a, b) => {
-      const baseA = baseStatusOf(a.status);
-      const baseB = baseStatusOf(b.status);
-      const suspA = baseA === "SUSPENSO";
-      const suspB = baseB === "SUSPENSO";
-      if (suspA && !suspB) return 1;
-      if (!suspA && suspB) return -1;
-      const da = a.previsao ? new Date(a.previsao) : new Date(0);
-      const db = b.previsao ? new Date(b.previsao) : new Date(0);
-      return da - db; // mais antigo primeiro
     });
+
+    // ordena: mais antigo -> mais novo, mas SUSPENSO sempre por último
+    out.sort((a, b) => {
+      const aSusp = a._status_base === "SUSPENSO" ? 1 : 0;
+      const bSusp = b._status_base === "SUSPENSO" ? 1 : 0;
+      if (aSusp !== bSusp) return aSusp - bSusp; // 0 antes de 1
+      const ta = a._previsao_date?.getTime() || 0;
+      const tb = b._previsao_date?.getTime() || 0;
+      return ta - tb;
+    });
+
+    return out;
+  }, [solicitacoes, filtros]);
+
+  const statusColors = {
+    RECEBIDO: "bg-gray-100 text-gray-800",
+    "RECEBIDO (D)": "bg-gray-100 text-gray-800",
+    PROGRAMADO: "bg-blue-100 text-blue-800",
+    "PROGRAMADO (D)": "bg-blue-100 text-blue-800",
+    "EM ROTA": "bg-amber-100 text-amber-800",
+    SUSPENSO: "bg-red-100 text-red-800",
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -91,14 +91,14 @@ export default function SolicitacoesTransporte() {
       </div>
       <p className="text-gray-600">Visualize e pesquise todas as solicitações de transporte</p>
 
-      {/* Mantém o mesmo componente de filtros */}
       <FiltrosTransporte filtros={filtros} onFiltrosChange={setFiltros} />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
+              {/* aqui troquei de bg-gray-50 para bg-blue-50 */}
+              <TableRow className="bg-blue-50">
                 <TableHead className="text-[10px] font-semibold">PREVISÃO</TableHead>
                 <TableHead className="text-[10px] font-semibold">SOLICITANTE</TableHead>
                 <TableHead className="text-[10px] font-semibold">CLIENTE/NOTA</TableHead>
@@ -113,56 +113,56 @@ export default function SolicitacoesTransporte() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">Carregando...</TableCell>
+                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    Carregando...
+                  </TableCell>
                 </TableRow>
               ) : solicitacoesFiltradas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">Nenhuma solicitação encontrada</TableCell>
+                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    Nenhuma solicitação encontrada
+                  </TableCell>
                 </TableRow>
               ) : (
-                solicitacoesFiltradas.map((sol) => {
-                  const base = baseStatusOf(sol.status);
-                  const color = statusColors[base] || "bg-gray-100 text-gray-800";
-                  return (
-                    <TableRow key={sol.id} className="hover:bg-gray-50">
-                      <TableCell className="text-[10px]">
-                        {sol.previsao ? format(new Date(sol.previsao), "dd/MM/yy", { locale: ptBR }) : "-"}
-                      </TableCell>
-                      <TableCell className="text-[10px]">{sol.solicitante}</TableCell>
-                      <TableCell className="text-[10px]">{sol.nota}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-bold">{sol.chassi_lista?.[0] || "SEM CHASSI"}</span>
-                          {sol.chassi_lista?.length > 1 && (
-                            <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">
-                              +{sol.chassi_lista.length - 1}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-[10px]">{sol.esta}</TableCell>
-                      <TableCell className="text-[10px]">{sol.vai}</TableCell>
-                      <TableCell className="text-[10px]">{sol.frete}</TableCell>
-                      <TableCell>
-                        <span className={`${color} text-[10px] rounded px-1 py-0.5 border`}>{sol.status}</span>
-                      </TableCell>
-                      <TableCell>
-                        {sol.loc ? (
-                          <a
-                            href={sol.loc}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                          >
-                            <MapPin className="w-4 h-4" />
-                          </a>
-                        ) : (
-                          <span className="text-gray-300">-</span>
+                solicitacoesFiltradas.map((sol) => (
+                  <TableRow key={sol.id} className="hover:bg-gray-50">
+                    <TableCell className="text-[10px]">
+                      {sol.previsao_br || (sol.previsao ? format(new Date(sol.previsao), "dd/MM/yy", { locale: ptBR }) : "-")}
+                    </TableCell>
+                    <TableCell className="text-[10px]">{sol.solicitante}</TableCell>
+                    <TableCell className="text-[10px]">{sol.nota}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-bold">{sol.chassi_lista?.[0] || "SEM CHASSI"}</span>
+                        {sol.chassi_lista?.length > 1 && (
+                          <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">+{sol.chassi_lista.length - 1}</span>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[10px]">{sol.esta}</TableCell>
+                    <TableCell className="text-[10px]">{sol.vai}</TableCell>
+                    <TableCell className="text-[10px]">{sol.frete}</TableCell>
+                    <TableCell>
+                      <span className={`${statusColors[sol.status] || "bg-gray-100 text-gray-800"} text-[10px] rounded px-1 py-0.5 border`}>
+                        {sol.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {sol.loc ? (
+                        <a
+                          href={sol.loc}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <MapPin className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
