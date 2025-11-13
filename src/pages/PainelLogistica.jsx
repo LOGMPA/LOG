@@ -28,7 +28,6 @@ export default function PainelLogistica() {
 
   // Visualização do gráfico: ambos empilhados, só terceiro ou só próprio
   const [viewMode, setViewMode] = useState("ambos"); // "ambos" | "terceiro" | "proprio"
-  const [somenteComMovimento, setSomenteComMovimento] = useState(true);
 
   const { data: solicitacoes = [] } = useSolicitacoes();
 
@@ -45,6 +44,23 @@ export default function PainelLogistica() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
+
+  // Helpers locais para datas PT-BR, SEM UTC
+  const parseBR = (s) => {
+    if (!s) return null;
+    if (s instanceof Date) return s;
+    const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
+  };
+  const monthKeyLocal = (dLike) => {
+    const d = dLike instanceof Date ? dLike : parseBR(dLike);
+    if (!d) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`; // yyyy-MM
+  };
 
   // Contadores de status (ignora “(D)”)
   const contagemStatus = useMemo(() => {
@@ -95,15 +111,16 @@ export default function PainelLogistica() {
   ];
 
   // Dados do gráfico: soma por cidade, separando TERCEIRO x PRÓPRIO, qtd e total
+  // Usa SOMENTE PREV e mês local (yyyy-MM). SEM startsWith em chave UTC.
   const dadosCidadesColuna = useMemo(() => {
     const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
-    const chaveMes = mesRef; // "yyyy-MM"
 
     for (const s of solicitacoes) {
-      // pega somente o mês selecionado
-      if (!s._previsao_key || !s._previsao_key.startsWith(chaveMes)) continue;
+      // seleciona mês pelo PREV em fuso local
+      const kMes = s._previsao_date ? monthKeyLocal(s._previsao_date) : monthKeyLocal(s.previsao_br || s.previsao);
+      if (kMes !== mesRef) continue;
 
       const valorProp = Number(s.valor_prop || 0);
       const valorTerc = Number(s.valor_terc || 0);
@@ -123,20 +140,14 @@ export default function PainelLogistica() {
       }
     }
 
-    let data = CIDADES.map((c) => ({
+    return CIDADES.map((c) => ({
       cidade: c,
       prop: somaProp[c] || 0,
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
       qtd: qtd[c] || 0,
     }));
-
-    if (somenteComMovimento) {
-      data = data.filter((d) => d.total > 0 || d.qtd > 0);
-    }
-
-    return data;
-  }, [solicitacoes, mesRef, somenteComMovimento]);
+  }, [solicitacoes, mesRef]);
 
   // Cores fixas por série
   const COR_TERC = "#1D4ED8"; // azul
@@ -227,14 +238,6 @@ export default function PainelLogistica() {
               <option value="terceiro">Somente Terceiro</option>
               <option value="proprio">Somente Próprio</option>
             </select>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={somenteComMovimento}
-                onChange={(e) => setSomenteComMovimento(e.target.checked)}
-              />
-              Mostrar só cidades com movimento
-            </label>
           </div>
         </CardHeader>
 
@@ -245,7 +248,7 @@ export default function PainelLogistica() {
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
               <YAxis tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`} />
               <Tooltip
-                formatter={(value, name, { payload }) => {
+                formatter={(value, name) => {
                   if (name === "Total") return [moeda(value), "Total"];
                   if (name === "Terceiro") return [moeda(value), "Terceiro"];
                   if (name === "Próprio") return [moeda(value), "Próprio"];
@@ -260,10 +263,10 @@ export default function PainelLogistica() {
                 <>
                   <Bar dataKey={viewMode === "terceiro" ? "terc" : "prop"} name={viewMode === "terceiro" ? "Terceiro" : "Próprio"} fill={viewMode === "terceiro" ? COR_TERC : COR_PROP}>
                     <LabelList dataKey={viewMode === "terceiro" ? "terc" : "prop"} position="inside" formatter={(v) => (v ? moeda(v) : "")} />
-                    {/* Qtd no interior da coluna via dummy LabelList no total */}
+                    {/* Qtd no interior da coluna */}
                     <LabelList dataKey="qtd" position="insideBottom" formatter={(v) => (v ? `${v}` : "")} />
                   </Bar>
-                  {/* Total no topo, usando dummy bar transparente */}
+                  {/* Total no topo (barra transparente) */}
                   <Bar dataKey="total" name="Total" fill="transparent">
                     <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
                   </Bar>
@@ -279,7 +282,6 @@ export default function PainelLogistica() {
                   <Bar dataKey="prop" name="Próprio" stackId="v" fill={COR_PROP}>
                     <LabelList dataKey="prop" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
                   </Bar>
-                  {/* Qtd no meio da coluna total (dummy transparente com total) */}
                   <Bar dataKey="total" name="Total" fill="transparent">
                     <LabelList dataKey="qtd" position="inside" formatter={(v) => (v ? `${v}` : "")} />
                     <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
