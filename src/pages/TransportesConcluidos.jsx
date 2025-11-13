@@ -14,23 +14,24 @@ export default function TransportesConcluidos() {
     solicitante: "",
     dataInicio: format(startOfMonth(hoje), "yyyy-MM-dd"),
     dataFim: format(endOfMonth(hoje), "yyyy-MM-dd"),
-    status: "CONCLUIDO",
   });
   const { data: solicitacoes = [], isLoading } = useSolicitacoes();
 
   const solicitacoesFiltradas = solicitacoes.filter(s => {
-    if (!String(s.status).toUpperCase().includes("CONCL")) return false;
-    if (filtros.status && filtros.status !== "all" && s.status !== filtros.status) return false;
+    if (s.status !== "CONCLUIDO") return false;
     if (filtros.chassi && !s.chassi_lista?.some(c => c.toLowerCase().includes(filtros.chassi.toLowerCase()))) return false;
     if (filtros.cliente && !String(s.nota || "").toLowerCase().includes(filtros.cliente.toLowerCase())) return false;
     if (filtros.solicitante && !String(s.solicitante || "").toLowerCase().includes(filtros.solicitante.toLowerCase())) return false;
-    const d = s.real ? new Date(s.real) : (s.previsao ? new Date(s.previsao) : null);
-    if (!d) return false;
-    if (filtros.dataInicio && d < new Date(filtros.dataInicio)) return false;
-    if (filtros.dataFim && d > new Date(filtros.dataFim)) return false;
+    if (filtros.dataInicio) {
+      const dp = new Date(s.previsao); const di = new Date(filtros.dataInicio);
+      if (dp < di) return false;
+    }
+    if (filtros.dataFim) {
+      const dp = new Date(s.previsao); const df = new Date(filtros.dataFim);
+      if (dp > df) return false;
+    }
     return true;
   });
-
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -39,6 +40,8 @@ export default function TransportesConcluidos() {
         <h1 className="text-3xl font-bold text-gray-900">Transportes Concluídos</h1>
       </div>
       <p className="text-gray-600">Histórico de transportes finalizados</p>
+      <FiltrosTransporte filtros={filtros} onFiltrosChange={setFiltros} showStatusFilter={true} />
+
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
