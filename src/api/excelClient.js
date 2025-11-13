@@ -1,24 +1,60 @@
 // src/api/excelClient.js
 import * as XLSX from "xlsx";
 
-/* =============== helpers de caminho público (base href safe) =============== */
-function publicUrl(path) {
-  const base = document.querySelector('base')?.getAttribute('href') || '/';
-  const a = base.replace(/\/+$/, '');
-  const b = String(path).replace(/^\/+/, '');
-  return `${a}/${b}`;
+/* ===================== resolver de URL pública (suporta subrota) ===================== */
+function baseHref() {
+  // Vite / CRA: import.meta.env.BASE_URL quando disponível
+  const vite = typeof import !== "undefined" && import.meta && import.meta.env && import.meta.env.BASE_URL;
+  if (vite) return vite.endsWith("/") ? vite : vite + "/";
+  const b = document.querySelector("base")?.getAttribute("href") || "/";
+  return b.endsWith("/") ? b : b + "/";
+}
+function joinPublic(path) {
+  const base = baseHref().replace(/\/+$/, "");
+  const p = String(path).replace(/^\/+/, "");
+  return `${base}/${p}`;
 }
 
-/* ======================= XLSX read: rápido e enxuto ======================= */
-const READ_OPTS = {
-  type: "array",
-  dense: true,
-  cellDates: true,
-  cellNF: false,
-  cellText: false,
-};
+/* ===================== candidatos de caminho (variações de caixa/extensão) ===================== */
+const CANDIDATES_XLSX = [
+  "data/Solicitacoes.xlsx",
+  "data/solicitacoes.xlsx",
+  "data/SOLICITACOES.xlsx",
+  "data/Solicitacoes.XLSX",
+  "data/solicitacoes.XLSX",
+];
+const CANDIDATES_JSON = [
+  "data/Solicitacoes.json",
+  "data/solicitacoes.json",
+];
 
-/* ======================= header map esperado na planilha ======================= */
+/* ===================== utils genéricos ===================== */
+async function fetchArrayBuffer(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(`HTTP ${r.status} em ${url}`);
+  return await r.arrayBuffer();
+}
+async function fetchJson(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(`HTTP ${r.status} em ${url}`);
+  return await r.json();
+}
+async function tryCandidates(getter, candidates) {
+  const tried = [];
+  for (const rel of candidates) {
+    const url = joinPublic(rel);
+    try {
+      const res = await getter(url);
+      console.info(`[solicitacoes] OK: ${url}`);
+      return res;
+    } catch (e) {
+      tried.push(url);
+    }
+  }
+  throw new Error(`Nenhum caminho funcionou:\n${tried.join("\n")}`);
+}
+
+/* ===================== mapeamento de colunas ===================== */
 const headerMap = {
   "STATUS": "status",
   "FRETE": "frete",
@@ -40,7 +76,9 @@ const headerMap = {
   "LOC": "loc",
 };
 
-/* ======================= utils ======================= */
+/* ===================== normalização/parse rápidos ===================== */
+const READ_OPTS = { type: "array", dense: true, cellDates: true, cellNF: false, cellText: false };
+
 function normalizar(txt) {
   return String(txt || "")
     .normalize("NFD")
@@ -55,12 +93,9 @@ function num(v) {
 }
 function splitChassi(v) {
   if (!v) return [];
-  return String(v)
-    .split(/[,\n;/|]+/)
-    .map(s => s.trim())
-    .filter(Boolean);
+  return String(v).split(/[,\n;/|]+/).map(s => s.trim()).filter(Boolean);
 }
-// dd/MM/yyyy -> Date local (sem UTC)
+// dd/MM/yyyy -> Date local
 function parseBRDate(value) {
   if (!value) return null;
   if (value instanceof Date && !isNaN(value)) return value;
@@ -86,10 +121,10 @@ function toKey(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${y}-${m}-${day}`; // yyyy-MM-dd local
 }
 
-/* ======================= cidades com acento bonito ======================= */
+/* ===================== cidades oficiais com acento certo ===================== */
 const CIDADES_DISPLAY = [
   "PONTA GROSSA",
   "CASTRO",
@@ -114,19 +149,7 @@ function extrairCidadeCanon(textoLivre) {
   return null;
 }
 
-/* ======================= carrega de XLSX OU JSON ======================= */
-async function fetchArrayBuffer(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status} ao buscar ${url}`);
-  return await r.arrayBuffer();
-}
-async function fetchJson(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status} ao buscar ${url}`);
-  return await r.json();
-}
-
-/* ======================= normalização de um item ======================= */
+/* ===================== normaliza uma linha ===================== */
 function normalizeRow(row, idx) {
   const o = {};
   for (const [col, key] of Object.entries(headerMap)) {
@@ -140,20 +163,20 @@ function normalizeRow(row, idx) {
     }
   }
 
-  // datas: SEMPRE usa PREV como base da UI
+  // SEMPRE PREV
   const dPrev = parseBRDate(o.previsao_raw);
   const dReal = parseBRDate(o.real_raw);
   o._previsao_date = dPrev;
   o._real_date = dReal;
   o.previsao_br = toBR(dPrev);
   o.real_br = toBR(dReal);
-  o._previsao_key = toKey(dPrev); // local key yyyy-MM-dd (sem UTC)
+  o._previsao_key = toKey(dPrev); // chave local (sem UTC)
 
   // status helpers
   o._status_up = normalizar(o.status);
   o._status_base = o._status_up.replace(/\s*\(D\)\s*/g, "");
 
-  // cidades canônicas com acento correto
+  // cidades oficiais com acento
   const estaCanon = extrairCidadeCanon(o.esta || o.estao_em);
   const vaiCanon = extrairCidadeCanon(o.vai || o.vai_para);
   o.esta = estaCanon || o.esta || o.estao_em || "";
@@ -163,33 +186,25 @@ function normalizeRow(row, idx) {
   return o;
 }
 
-/* ======================= API pública ======================= */
+/* ===================== loader público ===================== */
 export async function loadSolicitacoesFromExcel() {
-  const xlsxUrl = publicUrl("data/solicitacoes.xlsx");
-  const jsonUrl = publicUrl("data/solicitacoes.json");
-
-  // 1) tenta XLSX
+  // 1) tenta XLSX com variações de nome/caixa
   try {
-    const buf = await fetchArrayBuffer(xlsxUrl);
+    const buf = await tryCandidates(fetchArrayBuffer, CANDIDATES_XLSX);
     const wb = XLSX.read(buf, READ_OPTS);
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rawRows = XLSX.utils.sheet_to_json(ws, { defval: "", raw: true });
     const out = rawRows.map((row, i) => normalizeRow(row, i));
-    if (!out.length) console.warn("[solicitacoes] XLSX sem linhas… confere o cabeçalho.");
+    if (!out.length) console.warn("[solicitacoes] XLSX sem linhas ou cabeçalho divergente.");
     return out;
   } catch (errX) {
-    console.warn("[solicitacoes] Falha no XLSX, tentando JSON…", errX);
+    console.warn("[solicitacoes] Falha no XLSX, tentando JSON…", errX.message || errX);
   }
 
   // 2) fallback JSON (mesmo shape de colunas do headerMap)
-  try {
-    const raw = await fetchJson(jsonUrl);
-    if (!Array.isArray(raw)) throw new Error("JSON não é array");
-    const out = raw.map((row, i) => normalizeRow(row, i));
-    if (!out.length) console.warn("[solicitacoes] JSON sem linhas…");
-    return out;
-  } catch (errJ) {
-    console.error("[solicitacoes] Falha geral ao carregar XLSX e JSON.", errJ);
-    throw errJ;
-  }
+  const raw = await tryCandidates(fetchJson, CANDIDATES_JSON);
+  if (!Array.isArray(raw)) throw new Error("JSON não é array de objetos");
+  const out = raw.map((row, i) => normalizeRow(row, i));
+  if (!out.length) console.warn("[solicitacoes] JSON sem linhas…");
+  return out;
 }
