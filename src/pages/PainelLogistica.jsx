@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useSolicitacoes } from "../hooks/useSolicitacoes";
 import { format, subDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Clock, Truck, Navigation, CheckCircle } from "lucide-react";
 import {
   BarChart,
@@ -11,7 +10,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   LabelList,
 } from "recharts";
 import StatusCard from "../components/logistica/StatusCard";
@@ -19,19 +17,12 @@ import SolicitacaoCard from "../components/logistica/SolicitacaoCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
 export default function PainelLogistica() {
-  // Filtros “legados” do topo (se usar em outro lugar)
   const [dataInicio] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [dataFim] = useState(format(new Date(), "yyyy-MM"));
-
-  // Mês de referência do gráfico (yyyy-MM)
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
-
-  // Visualização do gráfico: ambos empilhados, só terceiro ou só próprio
-  const [viewMode, setViewMode] = useState("ambos"); // "ambos" | "terceiro" | "proprio"
 
   const { data: solicitacoes = [] } = useSolicitacoes();
 
-  // Paleta e status
   const statusColors = {
     RECEBIDO: { bg: "bg-gradient-to-br from-gray-50 to-gray-100", dot: "bg-gray-500", text: "text-gray-700", icon: "text-gray-600" },
     PROGRAMADO: { bg: "bg-gradient-to-br from-blue-50 to-blue-100", dot: "bg-blue-500", text: "text-blue-700", icon: "text-blue-600" },
@@ -45,7 +36,7 @@ export default function PainelLogistica() {
       maximumFractionDigits: 2,
     })}`;
 
-  // Helpers locais para datas PT-BR, SEM UTC
+  // Datas PT-BR no fuso local
   const parseBR = (s) => {
     if (!s) return null;
     if (s instanceof Date) return s;
@@ -59,10 +50,10 @@ export default function PainelLogistica() {
     if (!d) return "";
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`; // yyyy-MM
+    return `${y}-${m}`;
   };
 
-  // Contadores de status (ignora “(D)”)
+  // Cards: mesmos contadores (ignora "(D)")
   const contagemStatus = useMemo(() => {
     const base = solicitacoes.filter((s) => !s._status_up?.includes("(D)"));
     return {
@@ -73,7 +64,7 @@ export default function PainelLogistica() {
     };
   }, [solicitacoes]);
 
-  // Listas por status (sem limite)
+  // Listas por status (sem limite) — inalteradas
   const recebidos = useMemo(
     () =>
       solicitacoes
@@ -81,7 +72,6 @@ export default function PainelLogistica() {
         .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
     [solicitacoes]
   );
-
   const programados = useMemo(
     () =>
       solicitacoes
@@ -89,7 +79,6 @@ export default function PainelLogistica() {
         .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
     [solicitacoes]
   );
-
   const emRota = useMemo(
     () =>
       solicitacoes
@@ -98,7 +87,7 @@ export default function PainelLogistica() {
     [solicitacoes]
   );
 
-  // 8 filiais oficiais (exibição com acento correto já vem do loader)
+  // Ordem fixa das 8 cidades
   const CIDADES = [
     "PONTA GROSSA",
     "CASTRO",
@@ -110,15 +99,16 @@ export default function PainelLogistica() {
     "QUEDAS DO IGUAÇU",
   ];
 
-  // Dados do gráfico: soma por cidade, separando TERCEIRO x PRÓPRIO, qtd e total
-  // Usa SOMENTE PREV e mês local (yyyy-MM). SEM startsWith em chave UTC.
+  // Gráfico: apenas CONCLUÍDO/CONCLUÍDO (D), mês selecionado, mantém cidades zeradas
   const dadosCidadesColuna = useMemo(() => {
     const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
-    const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
 
     for (const s of solicitacoes) {
-      // seleciona mês pelo PREV em fuso local
+      // Só concluídos (com ou sem D)
+      if (!s._status_up?.includes("CONCL")) continue;
+
+      // mês pelo PREV local
       const kMes = s._previsao_date ? monthKeyLocal(s._previsao_date) : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
@@ -131,36 +121,34 @@ export default function PainelLogistica() {
       if (origem) {
         somaProp[origem] += valorProp;
         somaTerc[origem] += valorTerc;
-        qtd[origem] += 1;
       }
       if (destino && destino !== origem) {
         somaProp[destino] += valorProp;
         somaTerc[destino] += valorTerc;
-        qtd[destino] += 1;
       }
     }
 
+    // mantém todas as cidades, mesmo zeradas
     return CIDADES.map((c) => ({
       cidade: c,
       prop: somaProp[c] || 0,
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
-      qtd: qtd[c] || 0,
     }));
   }, [solicitacoes, mesRef]);
 
-  // Cores fixas por série
-  const COR_TERC = "#1D4ED8"; // azul
-  const COR_PROP = "#10B981"; // verde
+  // Cores do print: Terceiro = amarelo; Próprio = verde escuro
+  const COR_TERC = "#FFC107"; // amarelo
+  const COR_PROP = "#1B5E20"; // verde escuro
 
   return (
     <div className="p-6 md:p-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Logística 2026</h1>
-        <p className="text-gray-600">Visão geral das operações de transporte que são solicitadas através do Forms.</p>
+        <p className="text-gray-600">Visão geral das operações de transporte solicitadas via Forms.</p>
       </div>
 
-      {/* Cards de status (contam tudo, sem range) */}
+      {/* Cards de status */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatusCard status="RECEBIDO" count={contagemStatus.RECEBIDO} icon={Clock} color={statusColors.RECEBIDO} />
         <StatusCard status="PROGRAMADO" count={contagemStatus.PROGRAMADO} icon={Truck} color={statusColors.PROGRAMADO} />
@@ -168,57 +156,28 @@ export default function PainelLogistica() {
         <StatusCard status="CONCLUÍDO" count={contagemStatus.CONCLUIDO} icon={CheckCircle} color={statusColors.CONCLUIDO} />
       </div>
 
-      {/* Listas por status (sem limite) */}
+      {/* Listas por status */}
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="border-none shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold text-gray-700">RECEBIDO</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recebidos.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p>
-            ) : (
-              recebidos.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)
-            )}
-          </CardContent>
+          <CardHeader><CardTitle className="text-sm font-semibold text-gray-700">RECEBIDO</CardTitle></CardHeader>
+          <CardContent>{recebidos.length === 0 ? <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p> : recebidos.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)}</CardContent>
         </Card>
-
         <Card className="border-none shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold text-blue-700">PROGRAMADO</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {programados.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p>
-            ) : (
-              programados.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)
-            )}
-          </CardContent>
+          <CardHeader><CardTitle className="text-sm font-semibold text-blue-700">PROGRAMADO</CardTitle></CardHeader>
+          <CardContent>{programados.length === 0 ? <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p> : programados.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)}</CardContent>
         </Card>
-
         <Card className="border-none shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold text-amber-700">EM ROTA</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {emRota.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p>
-            ) : (
-              emRota.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)
-            )}
-          </CardContent>
+          <CardHeader><CardTitle className="text-sm font-semibold text-amber-700">EM ROTA</CardTitle></CardHeader>
+          <CardContent>{emRota.length === 0 ? <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p> : emRota.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)}</CardContent>
         </Card>
       </div>
 
-      {/* Gráfico mensal: breakdown Terceiro x Próprio + total e qtd */}
+      {/* Gráfico mensal: SOMENTE CONCLUÍDO/(D), Terceiro+Próprio empilhados, total no topo */}
       <Card className="border-none shadow-lg">
         <CardHeader className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900">Custos por Cidade no mês</CardTitle>
-            <p className="text-gray-600">
-              Dentro: <b>Quatidade</b> de solicitações. No topo: <b>Total Geral</b>. Segmentos: <span style={{ color: COR_TERC }}>Terceiro</span> e{" "}
-              <span style={{ color: COR_PROP }}>Próprio</span>.
-            </p>
+            <CardTitle className="text-xl font-bold text-gray-900">Custos por Cidade (Concluídos)</CardTitle>
+            <p className="text-gray-600">Somente as solicitações que já estão com o status CONCLUÍDO. Segmentos: Terceiro (amarelo) e Próprio (verde).</p>
           </div>
           <div className="flex items-center gap-3">
             <label className="text-sm text-gray-700">Mês:</label>
@@ -228,16 +187,6 @@ export default function PainelLogistica() {
               onChange={(e) => setMesRef(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
             />
-            <select
-              value={viewMode}
-              onChange={(e) => setViewMode(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-              title="Visualização"
-            >
-              <option value="ambos">Ambos (empilhado)</option>
-              <option value="terceiro">Somente Terceiro</option>
-              <option value="proprio">Somente Próprio</option>
-            </select>
           </div>
         </CardHeader>
 
@@ -252,42 +201,23 @@ export default function PainelLogistica() {
                   if (name === "Total") return [moeda(value), "Total"];
                   if (name === "Terceiro") return [moeda(value), "Terceiro"];
                   if (name === "Próprio") return [moeda(value), "Próprio"];
-                  if (name === "Qtd") return [value, "Qtd"];
                   return [value, name];
                 }}
                 labelFormatter={(label) => `Cidade: ${label}`}
               />
 
-              {/* Modo: somente uma série */}
-              {viewMode !== "ambos" && (
-                <>
-                  <Bar dataKey={viewMode === "terceiro" ? "terc" : "prop"} name={viewMode === "terceiro" ? "Terceiro" : "Próprio"} fill={viewMode === "terceiro" ? COR_TERC : COR_PROP}>
-                    <LabelList dataKey={viewMode === "terceiro" ? "terc" : "prop"} position="inside" formatter={(v) => (v ? moeda(v) : "")} />
-                    {/* Qtd no interior da coluna */}
-                    <LabelList dataKey="qtd" position="insideBottom" formatter={(v) => (v ? `${v}` : "")} />
-                  </Bar>
-                  {/* Total no topo (barra transparente) */}
-                  <Bar dataKey="total" name="Total" fill="transparent">
-                    <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
-                  </Bar>
-                </>
-              )}
+              {/* Terceiro (amarelo) + Próprio (verde) empilhados */}
+              <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
+                <LabelList dataKey="terc" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
+              </Bar>
+              <Bar dataKey="prop" name="Próprio" stackId="v" fill={COR_PROP}>
+                <LabelList dataKey="prop" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
+              </Bar>
 
-              {/* Modo: ambos empilhados */}
-              {viewMode === "ambos" && (
-                <>
-                  <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
-                    <LabelList dataKey="terc" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
-                  </Bar>
-                  <Bar dataKey="prop" name="Próprio" stackId="v" fill={COR_PROP}>
-                    <LabelList dataKey="prop" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
-                  </Bar>
-                  <Bar dataKey="total" name="Total" fill="transparent">
-                    <LabelList dataKey="qtd" position="inside" formatter={(v) => (v ? `${v}` : "")} />
-                    <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
-                  </Bar>
-                </>
-              )}
+              {/* Total no topo (barra transparente só para label) */}
+              <Bar dataKey="total" name="Total" fill="transparent">
+                <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
