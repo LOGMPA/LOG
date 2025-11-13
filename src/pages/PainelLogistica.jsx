@@ -53,19 +53,20 @@ const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
 /* ======== cores ======== */
-const COR_TERC = "#F2B300";  // amarelo mais escuro (pedido)
-const COR_PROP = "#1B5E20";  // verde escuro
-const GRID_LIGHT = "#ECECEC"; // grid mais claro
-const BADGE_BG = "#0B2B6B";   // azul-escuro do badge de quantidade
+const COR_TERC = "#F2B300";   // amarelo pedido
+const COR_PROP = "#1B5E20";   // verde escuro
+const GRID_LIGHT = "#ECECEC"; // grid clarinho
+const BADGE_BG = "#0B2B6B";   // badge qtd
 const BADGE_TEXT = "#FFFFFF";
-const TOTAL_COLOR = "#092357"; // azul-escuro p/ rótulo do total
+const TOTAL_COLOR = "#092357"; // total no topo
 
 /* ======== label custom para o badge de quantidade ======== */
-function QtdBadge({ x, y, width, value }) {
-  if (value == null) return null;
+function QtdBadge({ viewBox, value }) {
+  if (value == null || !viewBox) return null;
+  const { x, y, width } = viewBox;
   const w = 24, h = 16;
   const cx = x + width / 2 - w / 2;
-  const cy = y - h - 2; // encostado na base interna
+  const cy = y - h - 2;
   return (
     <g>
       <rect x={cx} y={cy} rx={3} ry={3} width={w} height={h} fill={BADGE_BG} />
@@ -83,11 +84,12 @@ function QtdBadge({ x, y, width, value }) {
   );
 }
 
-/* ======== label custom p/ TOTAL centralizado no topo ======== */
-function TotalLabel({ x, y, width, value }) {
-  if (value == null) return null;
+/* ======== label custom p/ TOTAL centralizado de verdade ======== */
+function TotalLabel({ viewBox, value }) {
+  if (value == null || !viewBox) return null;
+  const { x, y, width } = viewBox;
   const cx = x + width / 2;
-  const cy = y - 6; // 6px acima da barra
+  const cy = y - 6; // altura acima do topo da barra
   return (
     <text
       x={cx}
@@ -117,13 +119,6 @@ export default function PainelLogistica() {
     CONCLUIDO: { bg: "bg-gradient-to-br from-green-50 to-green-100", dot: "bg-green-500", text: "text-green-700", icon: "text-green-600" },
   };
 
-  const moeda = (v) =>
-    `R$ ${Number(v || 0).toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-
-  /* ======== contadores dos cards ======== */
   const contagemStatus = useMemo(() => {
     const base = solicitacoes.filter((s) => !s._status_up?.includes("(D)"));
     return {
@@ -134,7 +129,6 @@ export default function PainelLogistica() {
     };
   }, [solicitacoes]);
 
-  /* ======== listas de cartões ======== */
   const recebidos = useMemo(
     () =>
       solicitacoes
@@ -157,22 +151,18 @@ export default function PainelLogistica() {
     [solicitacoes]
   );
 
-  /* ======== GRÁFICO: só CONCLUÍDO/(D), usa CUSTO CIDADE para lançar valores ======== */
+  /* ======== GRÁFICO: só CONCLUÍDO/(D), usa CUSTO CIDADE ======== */
   const dadosCidadesColuna = useMemo(() => {
     const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
 
     for (const s of solicitacoes) {
-      // só concluídos (com ou sem D)
       if (!s._status_up?.includes("CONCL")) continue;
-
-      // mês pelo PREV local
       const kMes = s._previsao_date ? monthKeyLocal(s._previsao_date) : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
-      // cidade da coluna "CUSTO CIDADE" (no loader: custo_cidade)
-      const cidade = canonCidade(s.custo_cidade);
+      const cidade = canonCidade(s.custo_cidade); // vem da coluna CUSTO CIDADE (R:R)
       if (!cidade) continue;
 
       const valorProp = Number(s.valor_prop || 0);
@@ -227,7 +217,7 @@ export default function PainelLogistica() {
       <Card className="border-none shadow-lg">
         <CardHeader className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900">Custos (Concluídos)</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">Custos (Status Concluídos)</CardTitle>
             <p className="text-gray-600">
               Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio (verde).
             </p>
@@ -246,10 +236,13 @@ export default function PainelLogistica() {
         <CardContent>
           <ResponsiveContainer width="100%" height={380}>
             <BarChart data={dadosCidadesColuna} margin={{ top: 40, right: 16, left: 0, bottom: 34 }}>
-              {/* grid pontilhado com cinza mais claro */}
+              {/* grid pontilhado mais claro */}
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_LIGHT} />
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
-              <YAxis tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`} />
+              <YAxis
+                tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`}
+                tick={{ fontSize: 10 }}   // ~8pt do Excel
+              />
               <Tooltip
                 formatter={(value, name) => {
                   if (name === "Total") return [`R$ ${Number(value || 0).toLocaleString("pt-BR")}`, "Total"];
@@ -263,7 +256,6 @@ export default function PainelLogistica() {
 
               {/* Terceiro (amarelo) e Próprio (verde) empilhados */}
               <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
-                {/* valores menores, fonte branca */}
                 <LabelList
                   dataKey="terc"
                   position="inside"
@@ -282,7 +274,7 @@ export default function PainelLogistica() {
                 />
               </Bar>
 
-              {/* Badge de quantidade na base interna */}
+              {/* Badge de quantidade na base interna (centralizado) */}
               <Bar dataKey="qtd" name="Qtd" fill="transparent">
                 <LabelList dataKey="qtd" content={<QtdBadge />} />
               </Bar>
