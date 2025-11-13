@@ -110,25 +110,35 @@ export default function PainelLogistica() {
     )
     .sort((a, b) => new Date(a.previsao) - new Date(b.previsao));
 
-  // Cidades mapeadas (maiúsculas para matching)
+  // =========================
+  // CIDADES: SOMENTE AS 8 FILIAIS
+  // =========================
+  // Usamos nomes sem acentos para comparar e exibimos exatamente como definidos aqui
   const CIDADES_FIXAS = [
-    "CURITIBA",
-    "SÃO JOSÉ DOS PINHAIS",
-    "ARAUCÁRIA",
-    "PARANAGUÁ",
     "PONTA GROSSA",
-    "GUARAPUAVA",
-    "PRUDENTÓPOLIS",
-    "QUEDAS DO IGUAÇU",
+    "CASTRO",
+    "ARAPOTI",
     "TIBAGI",
+    "IRATI",
+    "PRUDENTOPOLIS",
+    "GUARAPUAVA",
+    "QUEDAS DO IGUACU",
   ];
 
+  // normaliza texto para maiúsculo sem acento
+  const normalizar = (t) =>
+    String(t || "")
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toUpperCase();
+
+  // tenta extrair a cidade apenas se bater com a nossa lista fixa
   const extrairCidade = (texto) => {
-    if (!texto) return null;
-    const t = String(texto).toUpperCase();
-    for (const c of CIDADES_FIXAS) if (t.includes(c)) return c;
+    const T = normalizar(texto);
+    for (const c of CIDADES_FIXAS) {
+      if (T.includes(normalizar(c))) return c; // retorna exatamente o rótulo da lista fixa
+    }
     return null;
-    // Se quiser algo mais robusto, dá pra usar regex ou normalização sem acento.
   };
 
   // Intervalo do mês selecionado para o gráfico
@@ -144,7 +154,7 @@ export default function PainelLogistica() {
     return d >= inicioMes && d <= fimMes;
   });
 
-  // Soma e contagem por cidade (origem e destino contam)
+  // Soma e contagem por cidade (origem e destino contam), apenas para as 8 fixas
   const somaPorCidade = {};
   const contagemPorCidade = {};
   CIDADES_FIXAS.forEach((c) => {
@@ -168,7 +178,7 @@ export default function PainelLogistica() {
     }
   });
 
-  // Dataset para o gráfico (inclui qtd)
+  // Dataset para o gráfico (inclui qtd) APENAS nas cidades fixas
   const JD_COLORS = [
     "#275317",
     "#367C2B",
@@ -178,11 +188,10 @@ export default function PainelLogistica() {
     "#367C2B",
     "#4E9F3D",
     "#6BBF59",
-    "#4E9F3D",
   ];
 
   const dadosCidadesColuna = CIDADES_FIXAS.map((c, i) => ({
-    cidade: c.charAt(0) + c.slice(1).toLowerCase(),
+    cidade: c, // exibe exatamente como a lista fixa
     valor: somaPorCidade[c] || 0,
     qtd: contagemPorCidade[c] || 0,
     fill: JD_COLORS[i % JD_COLORS.length],
@@ -287,7 +296,7 @@ export default function PainelLogistica() {
         </Card>
       </div>
 
-      {/* Gráfico mensal com valor e quantidade por cidade */}
+      {/* Gráfico mensal com valor e quantidade por cidade (apenas 8 filiais) */}
       <Card className="border-none shadow-lg">
         <CardHeader className="flex items-center justify-between">
           <div>
@@ -295,7 +304,7 @@ export default function PainelLogistica() {
               Custos por Cidade no mês
             </CardTitle>
             <p className="text-gray-600">
-              Quantidade dentro da barra, valor no topo.
+              Quantidade dentro da barra, valor no topo. Apenas as oito filiais.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -319,17 +328,19 @@ export default function PainelLogistica() {
               <YAxis
                 tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`}
               />
-              <Tooltip formatter={(v, name) => {
-                if (name === "Custo (R$)") {
-                  return [
-                    `R$ ${Number(v || 0).toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                    })}`,
-                    "Custo",
-                  ];
-                }
-                return [v, name];
-              }} />
+              <Tooltip
+                formatter={(v, name) => {
+                  if (name === "Custo (R$)") {
+                    return [
+                      `R$ ${Number(v || 0).toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                      })}`,
+                      "Custo",
+                    ];
+                  }
+                  return [v, name];
+                }}
+              />
               <Bar dataKey="valor" name="Custo (R$)" isAnimationActive>
                 {dadosCidadesColuna.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
