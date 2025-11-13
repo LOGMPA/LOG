@@ -216,7 +216,7 @@ export default function PainelLogistica() {
           <div>
             <CardTitle className="text-xl font-bold text-gray-900">Custos por Cidade no mês</CardTitle>
             <p className="text-gray-600">
-              Dentro: <b>Qtd</b> de solicitações. No topo: <b>Total</b>. Segmentos: <span style={{ color: COR_TERC }}>Terceiro</span> e{" "}
+              Dentro: <b>Quatidade</b> de solicitações. No topo: <b>Total Geral</b>. Segmentos: <span style={{ color: COR_TERC }}>Terceiro</span> e{" "}
               <span style={{ color: COR_PROP }}>Próprio</span>.
             </p>
           </div>
