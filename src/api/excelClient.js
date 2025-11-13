@@ -1,60 +1,15 @@
 // src/api/excelClient.js
 import * as XLSX from "xlsx";
 
-/* ===================== resolver de URL pública (suporta subrota) ===================== */
-function baseHref() {
-  // Vite / CRA: import.meta.env.BASE_URL quando disponível
-  const vite = typeof import !== "undefined" && import.meta && import.meta.env && import.meta.env.BASE_URL;
-  if (vite) return vite.endsWith("/") ? vite : vite + "/";
-  const b = document.querySelector("base")?.getAttribute("href") || "/";
-  return b.endsWith("/") ? b : b + "/";
-}
-function joinPublic(path) {
-  const base = baseHref().replace(/\/+$/, "");
-  const p = String(path).replace(/^\/+/, "");
-  return `${base}/${p}`;
+/* ===================== base pública (respeita <base href>) ===================== */
+function publicUrl(path) {
+  const base = document.querySelector("base")?.getAttribute("href") || "/";
+  const a = base.replace(/\/+$/, "");
+  const b = String(path).replace(/^\/+/, "");
+  return `${a}/${b}`;
 }
 
-/* ===================== candidatos de caminho (variações de caixa/extensão) ===================== */
-const CANDIDATES_XLSX = [
-  "data/Solicitacoes.xlsx",
-  "data/solicitacoes.xlsx",
-  "data/SOLICITACOES.xlsx",
-  "data/Solicitacoes.XLSX",
-  "data/solicitacoes.XLSX",
-];
-const CANDIDATES_JSON = [
-  "data/Solicitacoes.json",
-  "data/solicitacoes.json",
-];
-
-/* ===================== utils genéricos ===================== */
-async function fetchArrayBuffer(url) {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error(`HTTP ${r.status} em ${url}`);
-  return await r.arrayBuffer();
-}
-async function fetchJson(url) {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error(`HTTP ${r.status} em ${url}`);
-  return await r.json();
-}
-async function tryCandidates(getter, candidates) {
-  const tried = [];
-  for (const rel of candidates) {
-    const url = joinPublic(rel);
-    try {
-      const res = await getter(url);
-      console.info(`[solicitacoes] OK: ${url}`);
-      return res;
-    } catch (e) {
-      tried.push(url);
-    }
-  }
-  throw new Error(`Nenhum caminho funcionou:\n${tried.join("\n")}`);
-}
-
-/* ===================== mapeamento de colunas ===================== */
+/* ===================== mapeamento de colunas da planilha ===================== */
 const headerMap = {
   "STATUS": "status",
   "FRETE": "frete",
@@ -76,9 +31,16 @@ const headerMap = {
   "LOC": "loc",
 };
 
-/* ===================== normalização/parse rápidos ===================== */
-const READ_OPTS = { type: "array", dense: true, cellDates: true, cellNF: false, cellText: false };
+/* ===================== leitura enxuta do XLSX ===================== */
+const READ_OPTS = {
+  type: "array",
+  dense: true,
+  cellDates: true,
+  cellNF: false,
+  cellText: false,
+};
 
+/* ===================== utils rápidos ===================== */
 function normalizar(txt) {
   return String(txt || "")
     .normalize("NFD")
@@ -95,7 +57,7 @@ function splitChassi(v) {
   if (!v) return [];
   return String(v).split(/[,\n;/|]+/).map(s => s.trim()).filter(Boolean);
 }
-// dd/MM/yyyy -> Date local
+// dd/MM/yyyy -> Date local (sem UTC, sem D-1)
 function parseBRDate(value) {
   if (!value) return null;
   if (value instanceof Date && !isNaN(value)) return value;
@@ -163,20 +125,20 @@ function normalizeRow(row, idx) {
     }
   }
 
-  // SEMPRE PREV
+  // SEMPRE PREV (REAL ignorado), com chave local (mata D-1)
   const dPrev = parseBRDate(o.previsao_raw);
   const dReal = parseBRDate(o.real_raw);
   o._previsao_date = dPrev;
   o._real_date = dReal;
   o.previsao_br = toBR(dPrev);
   o.real_br = toBR(dReal);
-  o._previsao_key = toKey(dPrev); // chave local (sem UTC)
+  o._previsao_key = toKey(dPrev);
 
   // status helpers
   o._status_up = normalizar(o.status);
   o._status_base = o._status_up.replace(/\s*\(D\)\s*/g, "");
 
-  // cidades oficiais com acento
+  // cidades oficiais com acento correto
   const estaCanon = extrairCidadeCanon(o.esta || o.estao_em);
   const vaiCanon = extrairCidadeCanon(o.vai || o.vai_para);
   o.esta = estaCanon || o.esta || o.estao_em || "";
@@ -188,23 +150,22 @@ function normalizeRow(row, idx) {
 
 /* ===================== loader público ===================== */
 export async function loadSolicitacoesFromExcel() {
-  // 1) tenta XLSX com variações de nome/caixa
-  try {
-    const buf = await tryCandidates(fetchArrayBuffer, CANDIDATES_XLSX);
-    const wb = XLSX.read(buf, READ_OPTS);
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rawRows = XLSX.utils.sheet_to_json(ws, { defval: "", raw: true });
-    const out = rawRows.map((row, i) => normalizeRow(row, i));
-    if (!out.length) console.warn("[solicitacoes] XLSX sem linhas ou cabeçalho divergente.");
-    return out;
-  } catch (errX) {
-    console.warn("[solicitacoes] Falha no XLSX, tentando JSON…", errX.message || errX);
+  // usa exatamente LOG/public/data/Solicitacoes.xlsx (considerando <base href>)
+  const url = publicUrl("data/Solicitacoes.xlsx");
+
+  const resp = await fetch(url, { cache: "no-store" });
+  if (!resp.ok) {
+    throw new Error(`Falha ao buscar ${url} (HTTP ${resp.status}). Confere se o arquivo está em public/data/Solicitacoes.xlsx e com S maiúsculo.`);
   }
 
-  // 2) fallback JSON (mesmo shape de colunas do headerMap)
-  const raw = await tryCandidates(fetchJson, CANDIDATES_JSON);
-  if (!Array.isArray(raw)) throw new Error("JSON não é array de objetos");
-  const out = raw.map((row, i) => normalizeRow(row, i));
-  if (!out.length) console.warn("[solicitacoes] JSON sem linhas…");
+  const buf = await resp.arrayBuffer();
+  const wb = XLSX.read(buf, READ_OPTS);
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { defval: "", raw: true });
+  const out = rows.map((row, i) => normalizeRow(row, i));
+
+  if (!out.length) {
+    console.warn("[solicitacoes] Planilha lida porém sem linhas. Revise cabeçalhos.");
+  }
   return out;
 }
