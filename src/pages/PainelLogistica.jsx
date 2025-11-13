@@ -16,9 +16,9 @@ import StatusCard from "../components/logistica/StatusCard";
 import SolicitacaoCard from "../components/logistica/SolicitacaoCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
-/* ====== COLE OS LINKS DOS FORMULÁRIOS AQUI ====== */
-const FORM_FRETE_MAQUINA = "https://forms.office.com/r/SaYf3D9bz4"; // <- cole o link real
-const FORM_FRETE_PECAS   = "https://forms.office.com/r/A7wSsGC5fV"; // <- cole o link real
+/* ====== LINKS DOS FORMULÁRIOS ====== */
+const FORM_FRETE_MAQUINA = "https://seu-link-aqui.exemplo"; // cole o link real
+const FORM_FRETE_PECAS   = "https://seu-link-aqui.exemplo"; // cole o link real
 
 /* ========= Datas locais (sem UTC) ========= */
 const parseBR = (s) => {
@@ -65,13 +65,13 @@ const BADGE_TEXT = "#FFFFFF";
 const TOTAL_COLOR = "#092357"; // azul-escuro do total no topo
 
 /* ========= Labels custom ========= */
-// Badge de quantidade centralizado na base da pilha
+// Badge de quantidade centralizado no topo da pilha
 function QtdBadge({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
   const w = 24, h = 16;
   const cx = x + width / 2 - w / 2;
-  const cy = y - h - 2;
+  const cy = y - h - 2; // encosta no topo da pilha
   return (
     <g>
       <rect x={cx} y={cy} rx={3} ry={3} width={w} height={h} fill={BADGE_BG} />
@@ -89,12 +89,12 @@ function QtdBadge({ viewBox, value }) {
   );
 }
 
-// Total centralizado no topo da pilha
+// Total acima do badge (sem sobrepor)
 function TotalLabel({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
   const cx = x + width / 2;
-  const cy = y - 6;
+  const cy = y - 26; // sobe mais que o badge (h=16 + gap)
   return (
     <text
       x={cx}
@@ -135,7 +135,7 @@ export default function PainelLogistica() {
     };
   }, [solicitacoes]);
 
-  /* ========= Listas por status (sem limite) ========= */
+  /* ========= Listas por status ========= */
   const recebidos = useMemo(
     () =>
       solicitacoes
@@ -165,17 +165,13 @@ export default function PainelLogistica() {
     const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
 
     for (const s of solicitacoes) {
-      // apenas concluídos (com ou sem D)
       if (!s._status_up?.includes("CONCL")) continue;
-
-      // mês: sempre pela data PREV em fuso local
       const kMes = s._previsao_date
         ? monthKeyLocal(s._previsao_date)
         : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
-      // cidade: coluna "Custo por Filial" no loader => s.custo_cidade
-      const cidade = canonCidade(s.custo_cidade);
+      const cidade = canonCidade(s.custo_cidade); // "Custo por Filial"
       if (!cidade) continue;
 
       const valorProp = Number(s.valor_prop || 0);
@@ -186,14 +182,13 @@ export default function PainelLogistica() {
       qtd[cidade] += 1;
     }
 
-    // mantém todas as 8 cidades, mesmo zeradas
     return CIDADES.map((c) => ({
       cidade: c,
       prop: somaProp[c] || 0,
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
       qtd: qtd[c] || 0,
-      zero: 0, // barra dummy para empilhar labels
+      zero: 0, // dummy para empilhar labels
     }));
   }, [solicitacoes, mesRef]);
 
@@ -203,9 +198,7 @@ export default function PainelLogistica() {
       <Card className="border border-blue-200 bg-blue-50">
         <CardContent className="py-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <p className="text-sm font-semibold text-blue-900">
-              Formulários:
-            </p>
+            <p className="text-sm font-semibold text-blue-900">Formulários:</p>
             <div className="flex flex-wrap gap-2">
               <a
                 href={FORM_FRETE_MAQUINA}
@@ -283,7 +276,10 @@ export default function PainelLogistica() {
 
         <CardContent>
           <ResponsiveContainer width="100%" height={380}>
-            <BarChart data={dadosCidadesColuna} margin={{ top: 40, right: 16, left: 0, bottom: 34 }}>
+            <BarChart
+              data={dadosCidadesColuna}
+              margin={{ top: 48, right: 16, left: 0, bottom: 34 }} // mais espaço pro Total
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_LIGHT} />
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
               <YAxis
