@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useSolicitacoes } from "../hooks/useSolicitacoes";
-import { format, subDays, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Clock, Truck, Navigation, CheckCircle } from "lucide-react";
 import {
@@ -19,295 +19,197 @@ import SolicitacaoCard from "../components/logistica/SolicitacaoCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
 export default function PainelLogistica() {
-  // Filtros legados por range (mantidos caso use em outros pontos)
-  const [dataInicio, setDataInicio] = useState(
-    format(subDays(new Date(), 30), "yyyy-MM-dd")
-  );
-  const [dataFim, setDataFim] = useState(format(new Date(), "yyyy-MM-dd"));
+  // Filtros “legados” do topo (se usar em outro lugar)
+  const [dataInicio] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
+  const [dataFim] = useState(format(new Date(), "yyyy-MM"));
 
-  // Mês de referência do gráfico
+  // Mês de referência do gráfico (yyyy-MM)
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
+
+  // Visualização do gráfico: ambos empilhados, só terceiro ou só próprio
+  const [viewMode, setViewMode] = useState("ambos"); // "ambos" | "terceiro" | "proprio"
+  const [somenteComMovimento, setSomenteComMovimento] = useState(true);
 
   const { data: solicitacoes = [] } = useSolicitacoes();
 
-  // Cores por status (cartões)
+  // Paleta e status
   const statusColors = {
-    RECEBIDO: {
-      bg: "bg-gradient-to-br from-gray-50 to-gray-100",
-      dot: "bg-gray-500",
-      text: "text-gray-700",
-      icon: "text-gray-600",
-    },
-    PROGRAMADO: {
-      bg: "bg-gradient-to-br from-blue-50 to-blue-100",
-      dot: "bg-blue-500",
-      text: "text-blue-700",
-      icon: "text-blue-600",
-    },
-    "EM ROTA": {
-      bg: "bg-gradient-to-br from-amber-50 to-amber-100",
-      dot: "bg-amber-500",
-      text: "text-amber-700",
-      icon: "text-amber-600",
-    },
-    CONCLUIDO: {
-      bg: "bg-gradient-to-br from-green-50 to-green-100",
-      dot: "bg-green-500",
-      text: "text-green-700",
-      icon: "text-green-600",
-    },
+    RECEBIDO: { bg: "bg-gradient-to-br from-gray-50 to-gray-100", dot: "bg-gray-500", text: "text-gray-700", icon: "text-gray-600" },
+    PROGRAMADO: { bg: "bg-gradient-to-br from-blue-50 to-blue-100", dot: "bg-blue-500", text: "text-blue-700", icon: "text-blue-600" },
+    "EM ROTA": { bg: "bg-gradient-to-br from-amber-50 to-amber-100", dot: "bg-amber-500", text: "text-amber-700", icon: "text-amber-600" },
+    CONCLUIDO: { bg: "bg-gradient-to-br from-green-50 to-green-100", dot: "bg-green-500", text: "text-green-700", icon: "text-green-600" },
   };
 
-  // Funções utilitárias
   const moeda = (v) =>
     `R$ ${Number(v || 0).toLocaleString("pt-BR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
 
-  // Filtragem antiga por intervalo (usada em outras partes da tela, não afeta contadores)
-  const solicitacoesFiltradas = solicitacoes.filter((s) => {
-    const d = s.previsao ? new Date(s.previsao) : null;
-    if (!d) return false;
-    if (String(s.status).includes("(D)")) return false;
-    const inicio = new Date(dataInicio);
-    const fim = new Date(dataFim);
-    return d >= inicio && d <= fim;
-  });
-
-  // Contadores de status devem considerar TODOS os registros (exceto marcados com "(D)")
-  const contagemStatus = (() => {
-    const base = solicitacoes.filter(
-      (s) => !String(s.status).includes("(D)")
-    );
+  // Contadores de status (ignora “(D)”)
+  const contagemStatus = useMemo(() => {
+    const base = solicitacoes.filter((s) => !s._status_up?.includes("(D)"));
     return {
-      RECEBIDO: base.filter((s) => s.status === "RECEBIDO").length,
-      PROGRAMADO: base.filter((s) => s.status === "PROGRAMADO").length,
-      "EM ROTA": base.filter((s) => s.status === "EM ROTA").length,
-      CONCLUIDO:
-        base.filter(
-          (s) => s.status === "CONCLUIDO" || s.status === "CONCLUÍDO"
-        ).length,
+      RECEBIDO: base.filter((s) => s._status_base === "RECEBIDO").length,
+      PROGRAMADO: base.filter((s) => s._status_base === "PROGRAMADO").length,
+      "EM ROTA": base.filter((s) => s._status_base === "EM ROTA").length,
+      CONCLUIDO: base.filter((s) => s._status_up?.includes("CONCL")).length,
     };
-  })();
+  }, [solicitacoes]);
 
-  // Listas por status: sem corte de 15 dias, mostram tudo do status
-  const recebidos = solicitacoes
-    .filter(
-      (s) => s.status === "RECEBIDO" && !String(s.status).includes("(D)")
-    )
-    .sort((a, b) => new Date(a.previsao) - new Date(b.previsao));
+  // Listas por status (sem limite)
+  const recebidos = useMemo(
+    () =>
+      solicitacoes
+        .filter((s) => s._status_base === "RECEBIDO" && !s._status_up?.includes("(D)"))
+        .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
+    [solicitacoes]
+  );
 
-  const programados = solicitacoes
-    .filter(
-      (s) => s.status === "PROGRAMADO" && !String(s.status).includes("(D)")
-    )
-    .sort((a, b) => new Date(a.previsao) - new Date(b.previsao));
+  const programados = useMemo(
+    () =>
+      solicitacoes
+        .filter((s) => s._status_base === "PROGRAMADO" && !s._status_up?.includes("(D)"))
+        .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
+    [solicitacoes]
+  );
 
-  const emRota = solicitacoes
-    .filter(
-      (s) => s.status === "EM ROTA" && !String(s.status).includes("(D)")
-    )
-    .sort((a, b) => new Date(a.previsao) - new Date(b.previsao));
+  const emRota = useMemo(
+    () =>
+      solicitacoes
+        .filter((s) => s._status_base === "EM ROTA" && !s._status_up?.includes("(D)"))
+        .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
+    [solicitacoes]
+  );
 
-  // =========================
-  // CIDADES: SOMENTE AS 8 FILIAIS
-  // =========================
-  // Usamos nomes sem acentos para comparar e exibimos exatamente como definidos aqui
-  const CIDADES_FIXAS = [
+  // 8 filiais oficiais (exibição com acento correto já vem do loader)
+  const CIDADES = [
     "PONTA GROSSA",
     "CASTRO",
     "ARAPOTI",
     "TIBAGI",
     "IRATI",
-    "PRUDENTOPOLIS",
+    "PRUDENTÓPOLIS",
     "GUARAPUAVA",
-    "QUEDAS DO IGUACU",
+    "QUEDAS DO IGUAÇU",
   ];
 
-  // normaliza texto para maiúsculo sem acento
-  const normalizar = (t) =>
-    String(t || "")
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .toUpperCase();
+  // Dados do gráfico: soma por cidade, separando TERCEIRO x PRÓPRIO, qtd e total
+  const dadosCidadesColuna = useMemo(() => {
+    const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const chaveMes = mesRef; // "yyyy-MM"
 
-  // tenta extrair a cidade apenas se bater com a nossa lista fixa
-  const extrairCidade = (texto) => {
-    const T = normalizar(texto);
-    for (const c of CIDADES_FIXAS) {
-      if (T.includes(normalizar(c))) return c; // retorna exatamente o rótulo da lista fixa
+    for (const s of solicitacoes) {
+      // pega somente o mês selecionado
+      if (!s._previsao_key || !s._previsao_key.startsWith(chaveMes)) continue;
+
+      const valorProp = Number(s.valor_prop || 0);
+      const valorTerc = Number(s.valor_terc || 0);
+
+      const origem = CIDADES.includes(s.esta) ? s.esta : null;
+      const destino = CIDADES.includes(s.vai) ? s.vai : null;
+
+      if (origem) {
+        somaProp[origem] += valorProp;
+        somaTerc[origem] += valorTerc;
+        qtd[origem] += 1;
+      }
+      if (destino && destino !== origem) {
+        somaProp[destino] += valorProp;
+        somaTerc[destino] += valorTerc;
+        qtd[destino] += 1;
+      }
     }
-    return null;
-  };
 
-  // Intervalo do mês selecionado para o gráfico
-  const [anoGraf, mesGraf] = mesRef.split("-").map(Number);
-  const inicioMes = startOfMonth(new Date(anoGraf, mesGraf - 1, 1));
-  const fimMes = endOfMonth(new Date(anoGraf, mesGraf - 1, 1));
+    let data = CIDADES.map((c) => ({
+      cidade: c,
+      prop: somaProp[c] || 0,
+      terc: somaTerc[c] || 0,
+      total: (somaProp[c] || 0) + (somaTerc[c] || 0),
+      qtd: qtd[c] || 0,
+    }));
 
-  // Recorte mensal dos dados
-  const recorteMensal = solicitacoes.filter((s) => {
-    if (!s.previsao) return false;
-    const d = parseISO(s.previsao);
-    if (isNaN(d)) return false;
-    return d >= inicioMes && d <= fimMes;
-  });
-
-  // Soma e contagem por cidade (origem e destino contam), apenas para as 8 fixas
-  const somaPorCidade = {};
-  const contagemPorCidade = {};
-  CIDADES_FIXAS.forEach((c) => {
-    somaPorCidade[c] = 0;
-    contagemPorCidade[c] = 0;
-  });
-
-  recorteMensal.forEach((s) => {
-    const origem = extrairCidade(s.esta) || extrairCidade(s.estao_em);
-    const destino = extrairCidade(s.vai) || extrairCidade(s.vai_para);
-    const valor =
-      (s.valor_terc || 0) > 0 ? Number(s.valor_terc) : Number(s.valor_prop || 0);
-
-    if (origem && somaPorCidade[origem] !== undefined) {
-      somaPorCidade[origem] += valor || 0;
-      contagemPorCidade[origem] += 1;
+    if (somenteComMovimento) {
+      data = data.filter((d) => d.total > 0 || d.qtd > 0);
     }
-    if (destino && destino !== origem && somaPorCidade[destino] !== undefined) {
-      somaPorCidade[destino] += valor || 0;
-      contagemPorCidade[destino] += 1;
-    }
-  });
 
-  // Dataset para o gráfico (inclui qtd) APENAS nas cidades fixas
-  const JD_COLORS = [
-    "#275317",
-    "#367C2B",
-    "#4E9F3D",
-    "#6BBF59",
-    "#275317",
-    "#367C2B",
-    "#4E9F3D",
-    "#6BBF59",
-  ];
+    return data;
+  }, [solicitacoes, mesRef, somenteComMovimento]);
 
-  const dadosCidadesColuna = CIDADES_FIXAS.map((c, i) => ({
-    cidade: c, // exibe exatamente como a lista fixa
-    valor: somaPorCidade[c] || 0,
-    qtd: contagemPorCidade[c] || 0,
-    fill: JD_COLORS[i % JD_COLORS.length],
-  }));
+  // Cores fixas por série
+  const COR_TERC = "#1D4ED8"; // azul
+  const COR_PROP = "#10B981"; // verde
 
   return (
     <div className="p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Painel Logística 2026
-        </h1>
-        <p className="text-gray-600">
-          Visão geral das operações de transporte que são solicitadas através do Forms.
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Logística 2026</h1>
+        <p className="text-gray-600">Visão geral das operações de transporte que são solicitadas através do Forms.</p>
       </div>
 
       {/* Cards de status (contam tudo, sem range) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatusCard
-          status="RECEBIDO"
-          count={contagemStatus.RECEBIDO}
-          icon={Clock}
-          color={statusColors.RECEBIDO}
-        />
-        <StatusCard
-          status="PROGRAMADO"
-          count={contagemStatus.PROGRAMADO}
-          icon={Truck}
-          color={statusColors.PROGRAMADO}
-        />
-        <StatusCard
-          status="EM ROTA"
-          count={contagemStatus["EM ROTA"]}
-          icon={Navigation}
-          color={statusColors["EM ROTA"]}
-        />
-        <StatusCard
-          status="CONCLUÍDO"
-          count={contagemStatus.CONCLUIDO}
-          icon={CheckCircle}
-          color={statusColors.CONCLUIDO}
-        />
+        <StatusCard status="RECEBIDO" count={contagemStatus.RECEBIDO} icon={Clock} color={statusColors.RECEBIDO} />
+        <StatusCard status="PROGRAMADO" count={contagemStatus.PROGRAMADO} icon={Truck} color={statusColors.PROGRAMADO} />
+        <StatusCard status="EM ROTA" count={contagemStatus["EM ROTA"]} icon={Navigation} color={statusColors["EM ROTA"]} />
+        <StatusCard status="CONCLUÍDO" count={contagemStatus.CONCLUIDO} icon={CheckCircle} color={statusColors.CONCLUIDO} />
       </div>
 
-      {/* Listas por status (sem limite de quantidade) */}
+      {/* Listas por status (sem limite) */}
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="border-none shadow-lg">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold text-gray-700">
-              RECEBIDO
-            </CardTitle>
+            <CardTitle className="text-sm font-semibold text-gray-700">RECEBIDO</CardTitle>
           </CardHeader>
           <CardContent>
             {recebidos.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">
-                Nenhuma solicitação
-              </p>
+              <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p>
             ) : (
-              recebidos.map((sol) => (
-                <SolicitacaoCard key={sol.id} solicitacao={sol} />
-              ))
+              recebidos.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)
             )}
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-lg">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold text-blue-700">
-              PROGRAMADO
-            </CardTitle>
+            <CardTitle className="text-sm font-semibold text-blue-700">PROGRAMADO</CardTitle>
           </CardHeader>
           <CardContent>
             {programados.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">
-                Nenhuma solicitação
-              </p>
+              <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p>
             ) : (
-              programados.map((sol) => (
-                <SolicitacaoCard key={sol.id} solicitacao={sol} />
-              ))
+              programados.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)
             )}
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-lg">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold text-amber-700">
-              EM ROTA
-            </CardTitle>
+            <CardTitle className="text-sm font-semibold text-amber-700">EM ROTA</CardTitle>
           </CardHeader>
           <CardContent>
             {emRota.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">
-                Nenhuma solicitação
-              </p>
+              <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p>
             ) : (
-              emRota.map((sol) => (
-                <SolicitacaoCard key={sol.id} solicitacao={sol} />
-              ))
+              emRota.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Gráfico mensal com valor e quantidade por cidade (apenas 8 filiais) */}
+      {/* Gráfico mensal: breakdown Terceiro x Próprio + total e qtd */}
       <Card className="border-none shadow-lg">
-        <CardHeader className="flex items-center justify-between">
+        <CardHeader className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900">
-              Custos por Cidade no mês
-            </CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">Custos por Cidade no mês</CardTitle>
             <p className="text-gray-600">
-              Quantidade dentro da barra, valor no topo. Apenas as oito filiais.
+              Dentro: <b>Qtd</b> de solicitações. No topo: <b>Total</b>. Segmentos: <span style={{ color: COR_TERC }}>Terceiro</span> e{" "}
+              <span style={{ color: COR_PROP }}>Próprio</span>.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <label className="text-sm text-gray-700">Mês:</label>
             <input
               type="month"
@@ -315,47 +217,75 @@ export default function PainelLogistica() {
               onChange={(e) => setMesRef(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
             />
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+              title="Visualização"
+            >
+              <option value="ambos">Ambos (empilhado)</option>
+              <option value="terceiro">Somente Terceiro</option>
+              <option value="proprio">Somente Próprio</option>
+            </select>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={somenteComMovimento}
+                onChange={(e) => setSomenteComMovimento(e.target.checked)}
+              />
+              Mostrar só cidades com movimento
+            </label>
           </div>
         </CardHeader>
+
         <CardContent>
-          <ResponsiveContainer width="100%" height={340}>
-            <BarChart
-              data={dadosCidadesColuna}
-              margin={{ top: 28, right: 16, left: 0, bottom: 28 }}
-            >
+          <ResponsiveContainer width="100%" height={360}>
+            <BarChart data={dadosCidadesColuna} margin={{ top: 32, right: 16, left: 0, bottom: 28 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
-              <YAxis
-                tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`}
-              />
+              <YAxis tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`} />
               <Tooltip
-                formatter={(v, name) => {
-                  if (name === "Custo (R$)") {
-                    return [
-                      `R$ ${Number(v || 0).toLocaleString("pt-BR", {
-                        minimumFractionDigits: 2,
-                      })}`,
-                      "Custo",
-                    ];
-                  }
-                  return [v, name];
+                formatter={(value, name, { payload }) => {
+                  if (name === "Total") return [moeda(value), "Total"];
+                  if (name === "Terceiro") return [moeda(value), "Terceiro"];
+                  if (name === "Próprio") return [moeda(value), "Próprio"];
+                  if (name === "Qtd") return [value, "Qtd"];
+                  return [value, name];
                 }}
+                labelFormatter={(label) => `Cidade: ${label}`}
               />
-              <Bar dataKey="valor" name="Custo (R$)" isAnimationActive>
-                {dadosCidadesColuna.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-                {/* quantidade dentro da barra */}
-                <LabelList dataKey="qtd" position="inside" formatter={(v) => `${v}`} />
-                {/* valor no topo da barra */}
-                <LabelList
-                  dataKey="valor"
-                  position="top"
-                  formatter={(v) =>
-                    `R$ ${Number(v || 0).toLocaleString("pt-BR")}`
-                  }
-                />
-              </Bar>
+
+              {/* Modo: somente uma série */}
+              {viewMode !== "ambos" && (
+                <>
+                  <Bar dataKey={viewMode === "terceiro" ? "terc" : "prop"} name={viewMode === "terceiro" ? "Terceiro" : "Próprio"} fill={viewMode === "terceiro" ? COR_TERC : COR_PROP}>
+                    <LabelList dataKey={viewMode === "terceiro" ? "terc" : "prop"} position="inside" formatter={(v) => (v ? moeda(v) : "")} />
+                    {/* Qtd no interior da coluna via dummy LabelList no total */}
+                    <LabelList dataKey="qtd" position="insideBottom" formatter={(v) => (v ? `${v}` : "")} />
+                  </Bar>
+                  {/* Total no topo, usando dummy bar transparente */}
+                  <Bar dataKey="total" name="Total" fill="transparent">
+                    <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
+                  </Bar>
+                </>
+              )}
+
+              {/* Modo: ambos empilhados */}
+              {viewMode === "ambos" && (
+                <>
+                  <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
+                    <LabelList dataKey="terc" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
+                  </Bar>
+                  <Bar dataKey="prop" name="Próprio" stackId="v" fill={COR_PROP}>
+                    <LabelList dataKey="prop" position="inside" formatter={(v) => (v ? moeda(v) : "")} />
+                  </Bar>
+                  {/* Qtd no meio da coluna total (dummy transparente com total) */}
+                  <Bar dataKey="total" name="Total" fill="transparent">
+                    <LabelList dataKey="qtd" position="inside" formatter={(v) => (v ? `${v}` : "")} />
+                    <LabelList dataKey="total" position="top" formatter={(v) => (v ? moeda(v) : "")} />
+                  </Bar>
+                </>
+              )}
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
