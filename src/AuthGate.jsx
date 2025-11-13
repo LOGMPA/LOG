@@ -43,7 +43,7 @@ export default function AuthGate({ children }) {
         <Input placeholder="Senha" type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} />
         {err && <p className="text-sm text-red-600">{err}</p>}
         <Button type="submit" className="w-full">Entrar</Button>
-        <p className="text-[10px] text-gray-500 text-center">Dica: a senha padrão é definida no código (hash SHA-256).</p>
+        <p className="text-[10px] text-gray-500 text-center">Logística 2026.</p>
       </form>
     </div>
   );
