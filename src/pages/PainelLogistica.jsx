@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useSolicitacoes } from "../hooks/useSolicitacoes";
 import { format, subDays } from "date-fns";
-import { Clock, Truck, Navigation, CheckCircle } from "lucide-react";
+import { Clock, Truck, Navigation, CheckCircle, ExternalLink } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -16,7 +16,11 @@ import StatusCard from "../components/logistica/StatusCard";
 import SolicitacaoCard from "../components/logistica/SolicitacaoCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
-/* ======== helpers de data local (sem UTC) ======== */
+/* ====== COLE OS LINKS DOS FORMULÁRIOS AQUI ====== */
+const FORM_FRETE_MAQUINA = "https://forms.office.com/r/SaYf3D9bz4"; // <- cole o link real
+const FORM_FRETE_PECAS   = "https://forms.office.com/r/A7wSsGC5fV"; // <- cole o link real
+
+/* ========= Datas locais (sem UTC) ========= */
 const parseBR = (s) => {
   if (!s) return null;
   if (s instanceof Date) return s;
@@ -31,7 +35,7 @@ const monthKeyLocal = (dLike) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
 
-/* ======== normalização de cidade ======== */
+/* ========= Cidades canonizadas ========= */
 const NORM = (t) =>
   String(t || "")
     .normalize("NFD")
@@ -52,15 +56,16 @@ const CIDADES = [
 const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
-/* ======== cores ======== */
-const COR_TERC = "#F2B300";   // amarelo pedido
-const COR_PROP = "#1B5E20";   // verde escuro
+/* ========= Cores ========= */
+const COR_TERC = "#F2B300";   // amarelo mais escuro (Terceiro)
+const COR_PROP = "#1B5E20";   // verde escuro (Próprio)
 const GRID_LIGHT = "#ECECEC"; // grid clarinho
-const BADGE_BG = "#0B2B6B";   // badge qtd
+const BADGE_BG = "#0B2B6B";   // azul-escuro do badge de quantidade
 const BADGE_TEXT = "#FFFFFF";
-const TOTAL_COLOR = "#092357"; // total no topo
+const TOTAL_COLOR = "#092357"; // azul-escuro do total no topo
 
-/* ======== label custom para o badge de quantidade ======== */
+/* ========= Labels custom ========= */
+// Badge de quantidade centralizado na base da pilha
 function QtdBadge({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
@@ -84,12 +89,12 @@ function QtdBadge({ viewBox, value }) {
   );
 }
 
-/* ======== label custom p/ TOTAL centralizado de verdade ======== */
+// Total centralizado no topo da pilha
 function TotalLabel({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
   const cx = x + width / 2;
-  const cy = y - 6; // altura acima do topo da barra
+  const cy = y - 6;
   return (
     <text
       x={cx}
@@ -105,7 +110,7 @@ function TotalLabel({ viewBox, value }) {
 }
 
 export default function PainelLogistica() {
-  // filtros legados (não mexe)
+  // filtros legados (mantidos)
   const [dataInicio] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [dataFim] = useState(format(new Date(), "yyyy-MM"));
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
@@ -119,6 +124,7 @@ export default function PainelLogistica() {
     CONCLUIDO: { bg: "bg-gradient-to-br from-green-50 to-green-100", dot: "bg-green-500", text: "text-green-700", icon: "text-green-600" },
   };
 
+  /* ========= Cards: contadores ========= */
   const contagemStatus = useMemo(() => {
     const base = solicitacoes.filter((s) => !s._status_up?.includes("(D)"));
     return {
@@ -129,6 +135,7 @@ export default function PainelLogistica() {
     };
   }, [solicitacoes]);
 
+  /* ========= Listas por status (sem limite) ========= */
   const recebidos = useMemo(
     () =>
       solicitacoes
@@ -151,18 +158,24 @@ export default function PainelLogistica() {
     [solicitacoes]
   );
 
-  /* ======== GRÁFICO: só CONCLUÍDO/(D), usa CUSTO CIDADE ======== */
+  /* ========= Gráfico: só CONCLUÍDO/(D), usa Custo por Filial ========= */
   const dadosCidadesColuna = useMemo(() => {
     const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
 
     for (const s of solicitacoes) {
+      // apenas concluídos (com ou sem D)
       if (!s._status_up?.includes("CONCL")) continue;
-      const kMes = s._previsao_date ? monthKeyLocal(s._previsao_date) : monthKeyLocal(s.previsao_br || s.previsao);
+
+      // mês: sempre pela data PREV em fuso local
+      const kMes = s._previsao_date
+        ? monthKeyLocal(s._previsao_date)
+        : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
-      const cidade = canonCidade(s.custo_cidade); // vem da coluna CUSTO CIDADE (R:R)
+      // cidade: coluna "Custo por Filial" no loader => s.custo_cidade
+      const cidade = canonCidade(s.custo_cidade);
       if (!cidade) continue;
 
       const valorProp = Number(s.valor_prop || 0);
@@ -173,17 +186,50 @@ export default function PainelLogistica() {
       qtd[cidade] += 1;
     }
 
+    // mantém todas as 8 cidades, mesmo zeradas
     return CIDADES.map((c) => ({
       cidade: c,
       prop: somaProp[c] || 0,
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
       qtd: qtd[c] || 0,
+      zero: 0, // barra dummy para empilhar labels
     }));
   }, [solicitacoes, mesRef]);
 
   return (
     <div className="p-6 md:p-8 space-y-8">
+      {/* Bloco dos FORMULÁRIOS */}
+      <Card className="border border-blue-200 bg-blue-50">
+        <CardContent className="py-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm font-semibold text-blue-900">
+              Formulários:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={FORM_FRETE_MAQUINA}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-300 hover:bg-blue-100"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Solicitação de Frete (Máquina)
+              </a>
+              <a
+                href={FORM_FRETE_PECAS}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-300 hover:bg-blue-100"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Solicitação de Frete (Peças)
+              </a>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Logística 2026</h1>
         <p className="text-gray-600">Visão geral das operações de transporte solicitadas via Forms.</p>
@@ -213,11 +259,13 @@ export default function PainelLogistica() {
         </Card>
       </div>
 
-      {/* Gráfico mensal: CONCLUÍDO/(D), CUSTO CIDADE, labels e badge */}
+      {/* Gráfico mensal: Custos (Status Concluídos) */}
       <Card className="border-none shadow-lg">
         <CardHeader className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900">Custos (Status Concluídos)</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">
+              Custos (Status Concluídos)
+            </CardTitle>
             <p className="text-gray-600">
               Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio (verde).
             </p>
@@ -236,12 +284,11 @@ export default function PainelLogistica() {
         <CardContent>
           <ResponsiveContainer width="100%" height={380}>
             <BarChart data={dadosCidadesColuna} margin={{ top: 40, right: 16, left: 0, bottom: 34 }}>
-              {/* grid pontilhado mais claro */}
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_LIGHT} />
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
               <YAxis
                 tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`}
-                tick={{ fontSize: 10 }}   // ~8pt do Excel
+                tick={{ fontSize: 10 }}  // ~ “Excel 8”
               />
               <Tooltip
                 formatter={(value, name) => {
@@ -274,13 +321,9 @@ export default function PainelLogistica() {
                 />
               </Bar>
 
-              {/* Badge de quantidade na base interna (centralizado) */}
-              <Bar dataKey="qtd" name="Qtd" fill="transparent">
+              {/* Barra dummy (altura zero) no MESMO stack para posicionar QTD e TOTAL */}
+              <Bar dataKey="zero" stackId="v" fill="transparent">
                 <LabelList dataKey="qtd" content={<QtdBadge />} />
-              </Bar>
-
-              {/* Total no topo, centralizado e azul-escuro */}
-              <Bar dataKey="total" name="Total" fill="transparent">
                 <LabelList dataKey="total" content={<TotalLabel />} />
               </Bar>
             </BarChart>
