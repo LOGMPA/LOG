@@ -1,45 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useSolicitacoes } from "../hooks/useSolicitacoes";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle, MapPin } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import FiltrosTransporte from "../components/logistica/FiltrosTransporte";
 
 export default function TransportesConcluidos() {
-  const hoje = new Date();
+  // agora sem datas pré-preenchidas
   const [filtros, setFiltros] = useState({
     chassi: "",
     cliente: "",
     solicitante: "",
-    dataInicio: format(startOfMonth(hoje), "yyyy-MM-dd"),
-    dataFim: format(endOfMonth(hoje), "yyyy-MM-dd"),
+    dataInicio: "",   // vazio
+    dataFim: "",      // vazio
     status: "all",
   });
 
   const { data: solicitacoes = [], isLoading } = useSolicitacoes();
 
-  // SEMPRE usar PREV: chave e data
-  const dataChavePrev = (s) => s._previsao_date;
+  // sempre usa PREV; mostra só concluídos; ordena do mais novo pro mais antigo
+  const solicitacoesFiltradas = useMemo(() => {
+    const out = solicitacoes.filter((s) => {
+      if (!s._status_up?.includes("CONCL")) return false; // só concluídos
 
-  const solicitacoesFiltradas = solicitacoes
-    .filter((s) => {
-      if (!s._status_up?.includes("CONCL")) return false;
-
-      if (filtros.chassi && !s.chassi_lista?.some((c) => c.toLowerCase().includes(filtros.chassi.toLowerCase()))) return false;
+      if (filtros.chassi && !s.chassi_lista?.some(c => c.toLowerCase().includes(filtros.chassi.toLowerCase()))) return false;
       if (filtros.cliente && !String(s.nota || "").toLowerCase().includes(filtros.cliente.toLowerCase())) return false;
       if (filtros.solicitante && !String(s.solicitante || "").toLowerCase().includes(filtros.solicitante.toLowerCase())) return false;
 
-      const d = dataChavePrev(s);
+      const d = s._previsao_date ? new Date(s._previsao_date) : null;
       if (!d) return false;
-      if (filtros.dataInicio && d < new Date(filtros.dataInicio)) return false;
-      if (filtros.dataFim && d > new Date(filtros.dataFim)) return false;
+
+      if (filtros.dataInicio) {
+        const di = new Date(filtros.dataInicio);
+        if (d < di) return false;
+      }
+      if (filtros.dataFim) {
+        const df = new Date(filtros.dataFim);
+        if (d > df) return false;
+      }
 
       if (filtros.status !== "all" && filtros.status.toUpperCase() !== "CONCLUIDO") return false;
+
       return true;
-    })
-    // Mais novo -> mais antigo, por PREV
-    .sort((a, b) => (dataChavePrev(b)?.getTime() || 0) - (dataChavePrev(a)?.getTime() || 0));
+    });
+
+    // mais novo → mais antigo por PREV
+    out.sort((a, b) => (b._previsao_date?.getTime() || 0) - (a._previsao_date?.getTime() || 0));
+    return out;
+  }, [solicitacoes, filtros]);
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -49,6 +58,7 @@ export default function TransportesConcluidos() {
       </div>
       <p className="text-gray-600">Histórico de transportes finalizados</p>
 
+      {/* usa o mesmo componente de filtros; os campos de data começam vazios */}
       <FiltrosTransporte filtros={filtros} onFiltrosChange={setFiltros} showStatusFilter={true} />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -75,7 +85,9 @@ export default function TransportesConcluidos() {
               ) : (
                 solicitacoesFiltradas.map((sol) => (
                   <TableRow key={sol.id} className="hover:bg-gray-50">
-                    <TableCell className="text-[10px]">{sol.previsao_br || "-"}</TableCell>
+                    <TableCell className="text-[10px]">
+                      {sol.previsao_br || (sol.previsao ? format(new Date(sol.previsao), "dd/MM/yy", { locale: ptBR }) : "-")}
+                    </TableCell>
                     <TableCell className="text-[10px]">{sol.solicitante}</TableCell>
                     <TableCell className="text-[10px]">{sol.nota}</TableCell>
                     <TableCell>
