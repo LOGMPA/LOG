@@ -14,59 +14,32 @@ export default function TransportesConcluidos() {
     solicitante: "",
     dataInicio: format(startOfMonth(hoje), "yyyy-MM-dd"),
     dataFim: format(endOfMonth(hoje), "yyyy-MM-dd"),
-    status: "all", // mantemos o seletor de status sem travar no CONCLUIDO
+    status: "all",
   });
 
   const { data: solicitacoes = [], isLoading } = useSolicitacoes();
 
-  // Helper: data principal para ordenação/exibição (prioriza REAL para concluídos)
-  const dataChave = (s) => new Date(s.real || s.previsao);
+  // SEMPRE usar PREV: chave e data
+  const dataChavePrev = (s) => s._previsao_date;
 
-  // Filtra somente concluídos (com e sem "(D)"), aplica filtros e ordena do mais novo para o mais antigo
   const solicitacoesFiltradas = solicitacoes
     .filter((s) => {
-      const status = String(s.status || "").toUpperCase();
+      if (!s._status_up?.includes("CONCL")) return false;
 
-      // manter apenas concluídos (CONCLUIDO e CONCLUIDO (D))
-      if (!status.includes("CONCL")) return false;
+      if (filtros.chassi && !s.chassi_lista?.some((c) => c.toLowerCase().includes(filtros.chassi.toLowerCase()))) return false;
+      if (filtros.cliente && !String(s.nota || "").toLowerCase().includes(filtros.cliente.toLowerCase())) return false;
+      if (filtros.solicitante && !String(s.solicitante || "").toLowerCase().includes(filtros.solicitante.toLowerCase())) return false;
 
-      // filtros de texto
-      if (filtros.chassi && !s.chassi_lista?.some((c) => c.toLowerCase().includes(filtros.chassi.toLowerCase())))
-        return false;
-      if (filtros.cliente && !String(s.nota || "").toLowerCase().includes(filtros.cliente.toLowerCase()))
-        return false;
-      if (filtros.solicitante && !String(s.solicitante || "").toLowerCase().includes(filtros.solicitante.toLowerCase()))
-        return false;
-
-      // datas: usa dataChave (real || previsao)
-      const d = s.real || s.previsao ? dataChave(s) : null;
+      const d = dataChavePrev(s);
       if (!d) return false;
+      if (filtros.dataInicio && d < new Date(filtros.dataInicio)) return false;
+      if (filtros.dataFim && d > new Date(filtros.dataFim)) return false;
 
-      if (filtros.dataInicio) {
-        const di = new Date(filtros.dataInicio);
-        if (d < di) return false;
-      }
-      if (filtros.dataFim) {
-        const df = new Date(filtros.dataFim);
-        if (d > df) return false;
-      }
-
-      // filtro de status (selecao opcional do usuário)
-      if (filtros.status !== "all") {
-        const filtroUp = String(filtros.status).toUpperCase();
-        // aceita tanto "CONCLUIDO" quanto "CONCLUIDO (D)" quando o filtro for CONCLUIDO
-        if (filtroUp === "CONCLUIDO") {
-          if (!status.includes("CONCL")) return false;
-        } else {
-          // se algum dia adicionar outra opção, compara por igualdade
-          if (status !== filtroUp) return false;
-        }
-      }
-
+      if (filtros.status !== "all" && filtros.status.toUpperCase() !== "CONCLUIDO") return false;
       return true;
     })
-    // ORDEM: mais novo -> mais antigo
-    .sort((a, b) => dataChave(b) - dataChave(a));
+    // Mais novo -> mais antigo, por PREV
+    .sort((a, b) => (dataChavePrev(b)?.getTime() || 0) - (dataChavePrev(a)?.getTime() || 0));
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -76,7 +49,6 @@ export default function TransportesConcluidos() {
       </div>
       <p className="text-gray-600">Histórico de transportes finalizados</p>
 
-      {/* Mesmos filtros da tela de Solicitações */}
       <FiltrosTransporte filtros={filtros} onFiltrosChange={setFiltros} showStatusFilter={true} />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -84,7 +56,7 @@ export default function TransportesConcluidos() {
           <Table>
             <TableHeader>
               <TableRow className="bg-green-50">
-                <TableHead className="text-[10px] font-semibold">DATA</TableHead>
+                <TableHead className="text-[10px] font-semibold">PREVISÃO</TableHead>
                 <TableHead className="text-[10px] font-semibold">SOLICITANTE</TableHead>
                 <TableHead className="text-[10px] font-semibold">CLIENTE/NOTA</TableHead>
                 <TableHead className="text-[10px] font-semibold">CHASSI</TableHead>
@@ -97,54 +69,28 @@ export default function TransportesConcluidos() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                    Carregando...
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-gray-500">Carregando...</TableCell></TableRow>
               ) : solicitacoesFiltradas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                    Nenhum transporte concluído encontrado
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-gray-500">Nenhum transporte concluído encontrado</TableCell></TableRow>
               ) : (
                 solicitacoesFiltradas.map((sol) => (
                   <TableRow key={sol.id} className="hover:bg-gray-50">
-                    <TableCell className="text-[10px]">
-                      {sol.real || sol.previsao
-                        ? format(new Date(sol.real || sol.previsao), "dd/MM/yy", { locale: ptBR })
-                        : "-"}
-                    </TableCell>
+                    <TableCell className="text-[10px]">{sol.previsao_br || "-"}</TableCell>
                     <TableCell className="text-[10px]">{sol.solicitante}</TableCell>
                     <TableCell className="text-[10px]">{sol.nota}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <span className="text-xs font-bold">{sol.chassi_lista?.[0] || "SEM CHASSI"}</span>
-                        {sol.chassi_lista?.length > 1 && (
-                          <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">
-                            +{sol.chassi_lista.length - 1}
-                          </span>
-                        )}
+                        {sol.chassi_lista?.length > 1 && <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">+{sol.chassi_lista.length - 1}</span>}
                       </div>
                     </TableCell>
                     <TableCell className="text-[10px]">{sol.esta}</TableCell>
                     <TableCell className="text-[10px]">{sol.vai}</TableCell>
                     <TableCell className="text-[10px]">{sol.frete}</TableCell>
-                    <TableCell>
-                      <span className="bg-green-100 text-green-800 text-[10px] rounded px-1 py-0.5 border">
-                        {sol.status}
-                      </span>
-                    </TableCell>
+                    <TableCell><span className="bg-green-100 text-green-800 text-[10px] rounded px-1 py-0.5 border">{sol.status}</span></TableCell>
                     <TableCell>
                       {sol.loc ? (
-                        <a
-                          href={sol.loc}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                          title="Abrir no mapa"
-                        >
+                        <a href={sol.loc} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800" title="Abrir no mapa">
                           <MapPin className="w-4 h-4" />
                         </a>
                       ) : (
