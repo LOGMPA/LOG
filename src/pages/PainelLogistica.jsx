@@ -227,9 +227,9 @@ export default function PainelLogistica() {
       <Card className="border-none shadow-lg">
         <CardHeader className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900">Custos por Cidade (Concluídos)</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">Custos (Concluídos)</CardTitle>
             <p className="text-gray-600">
-              Usa <b>CUSTO CIDADE</b>. Segmentos: Terceiro (amarelo) e Próprio (verde). Total centralizado no topo.
+              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio (verde).
             </p>
           </div>
           <div className="flex items-center gap-3">
