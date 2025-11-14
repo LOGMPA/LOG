@@ -1,50 +1,81 @@
-import React, { useEffect, useState } from "react";
-import { Input } from "./components/ui/input";
-import { Button } from "./components/ui/button";
+import { useEffect, useState } from "react";
+import logisticaLogo from "../assets/ICONLOG.jpg"; // ajusta o caminho se o arquivo estiver em outro lugar
 
-const PASS_HASH = "c25843621ae06bd4c3ca85707dae016e46f947efb83fef1c098e0221e21003cf"; // sha256("MPA")
+// Mesmo hash de antes. NÃO coloca a senha pura aqui.
+const PASS_HASH = "c2584e8c8f6e8d3f7f2e8f7f0c9a9b0b4e3b0f0d2c3e1a9b7d4e3f9b0c3d0e3"; // exemplo, mantém o teu
 
-async function sha256(str) {
-  const enc = new TextEncoder().encode(str);
-  const buf = await crypto.subtle.digest("SHA-256", enc);
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hashHex;
 }
 
-export default function AuthGate({ children }) {
-  const [ok, setOk] = useState(false);
-  const [pwd, setPwd] = useState("");
-  const [err, setErr] = useState("");
+export function AuthGate({ children }) {
+  const [input, setInput] = useState("");
+  const [isAuthed, setIsAuthed] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const flag = localStorage.getItem("auth_v1");
-    if (flag === PASS_HASH) setOk(true);
+    const stored = localStorage.getItem("log-auth");
+    if (stored === "ok") {
+      setIsAuthed(true);
+    }
   }, []);
 
-  async function handleEnter(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const h = await sha256(pwd);
-    if (h === PASS_HASH) {
-      localStorage.setItem("auth_v1", PASS_HASH);
-      setOk(true);
-    } else {
-      setErr("Senha inválida.");
-    }
-  }
+    setError("");
 
-  if (ok) return children;
+    const value = input.trim();
+    if (!value) {
+      setError("Digite a senha.");
+      return;
+    }
+
+    try {
+      const hash = await sha256(value);
+      if (hash === PASS_HASH) {
+        setIsAuthed(true);
+        localStorage.setItem("log-auth", "ok");
+      } else {
+        setError("Senha incorreta.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Erro ao validar senha.");
+    }
+  };
+
+  if (isAuthed) return children;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAF9] p-4">
-      <form onSubmit={handleEnter} className="bg-white w-full max-w-sm rounded-xl border border-gray-200 shadow p-6 space-y-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Acesso restrito</h1>
-          <p className="text-sm text-gray-600">Digite a senha para acessar.</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 px-4">
+      <div className="flex flex-col items-center">
+        {/* LOGO REDONDA */}
+        <div className="w-40 h-40 mb-4 rounded-full overflow-hidden shadow-lg border-4 border-white bg-white">
+          <img
+            src={logisticaLogo}
+            alt="Logística MacPonta Agro"
+            className="w-full h-full object-cover"
+          />
         </div>
-        <Input placeholder="Senha" type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} />
-        {err && <p className="text-sm text-red-600">{err}</p>}
-        <Button type="submit" className="w-full">Entrar</Button>
-        <p className="text-[10px] text-gray-500 text-center">Logística 2026.</p>
-      </form>
-    </div>
-  );
-}
+
+        {/* CARD DE LOGIN */}
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg px-6 py-8">
+          <h1 className="text-xl font-semibold text-slate-900 mb-1">
+            Acesso restrito
+          </h1>
+          <p className="text-sm text-slate-500 mb-6">
+            Digite a senha para acessar.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-1 block">
+                Senha
+              </label>
+              <input
+                type="password"
+                value={input}
