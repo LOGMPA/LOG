@@ -260,7 +260,7 @@ export default function PainelLogistica() {
                 <span className="text-lg md:text-3xl font-extrabold text-white">
                   MacPonta Agro • Painel Logística 2026
                 </span>
-                <span className="text-base md:text-lg font-semibold text-emerald-100">
+                <span className="text-sm md:text-base font-bold text-emerald-200">
                   Operações de transporte solicitadas via Forms.
                 </span>
               </div>
