@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import logisticaLogo from "./assets/ICONLOG.jpg"; // arquivo em: src/assets/ICONLOG.jpg
 
-// SHA-256 da senha "MPA"
+// 
 const PASS_HASH = "c25843621ae06bd4c3ca85707dae016e46f947efb83fef1c098e0221e21003cf";
 
 async function sha256(message) {
