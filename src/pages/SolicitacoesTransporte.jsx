@@ -3,9 +3,17 @@ import { useSolicitacoes } from "../hooks/useSolicitacoes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { FileText, MapPin } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 import { Badge } from "../components/ui/badge";
 import FiltrosTransporte from "../components/logistica/FiltrosTransporte";
+import { Card, CardContent } from "../components/ui/card";
 
 export default function SolicitacoesTransporte() {
   const [filtros, setFiltros] = useState({
@@ -31,15 +39,30 @@ export default function SolicitacoesTransporte() {
       if (!allowed.has(s._status_base)) return false;
 
       // filtro de chassi
-      if (filtros.chassi && !s.chassi_lista?.some((c) => c.toLowerCase().includes(filtros.chassi.toLowerCase()))) {
+      if (
+        filtros.chassi &&
+        !s.chassi_lista?.some((c) =>
+          c.toLowerCase().includes(filtros.chassi.toLowerCase())
+        )
+      ) {
         return false;
       }
       // filtro de cliente (nota)
-      if (filtros.cliente && !String(s.nota || "").toLowerCase().includes(filtros.cliente.toLowerCase())) {
+      if (
+        filtros.cliente &&
+        !String(s.nota || "")
+          .toLowerCase()
+          .includes(filtros.cliente.toLowerCase())
+      ) {
         return false;
       }
       // filtro de solicitante
-      if (filtros.solicitante && !String(s.solicitante || "").toLowerCase().includes(filtros.solicitante.toLowerCase())) {
+      if (
+        filtros.solicitante &&
+        !String(s.solicitante || "")
+          .toLowerCase()
+          .includes(filtros.solicitante.toLowerCase())
+      ) {
         return false;
       }
       // filtro de datas por PREV
@@ -55,7 +78,6 @@ export default function SolicitacoesTransporte() {
       }
       // filtro de status específico (se selecionar no dropdown)
       if (filtros.status !== "all") {
-        // compara com o status exibido original (mantém (D) se existir)
         if (String(s.status) !== filtros.status) return false;
       }
       return true;
@@ -65,7 +87,7 @@ export default function SolicitacoesTransporte() {
     out.sort((a, b) => {
       const aSusp = a._status_base === "SUSPENSO" ? 1 : 0;
       const bSusp = b._status_base === "SUSPENSO" ? 1 : 0;
-      if (aSusp !== bSusp) return aSusp - bSusp; // 0 antes de 1
+      if (aSusp !== bSusp) return aSusp - bSusp;
       const ta = a._previsao_date?.getTime() || 0;
       const tb = b._previsao_date?.getTime() || 0;
       return ta - tb;
@@ -85,19 +107,54 @@ export default function SolicitacoesTransporte() {
 
   return (
     <div className="p-6 md:p-8 space-y-6">
-      <div className="flex items-center gap-3 mb-2">
-        <FileText className="w-8 h-8 text-blue-600" />
-        <h1 className="text-3xl font-bold text-gray-900">Solicitações de Transporte</h1>
-      </div>
-      <p className="text-gray-600">Visualize e pesquise todas as solicitações de transporte</p>
+      {/* Banner/cabeçalho igual vibe do calendário/painel */}
+      <Card className="border-none shadow-lg overflow-hidden">
+        <CardContent className="p-0">
+          <div
+            className="px-5 py-3"
+            style={{
+              background:
+                "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
+            }}
+          >
+            <div className="w-full max-w-2xl bg-white/95 rounded-2xl shadow-md px-3 py-2 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+                <FileText className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg md:text-2xl font-extrabold text-slate-900">
+                  Solicitações de Transporte
+                </span>
+                <span className="text-sm md:text-base text-slate-600">
+                  Visualize e pesquise todas as solicitações de transporte.
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <FiltrosTransporte filtros={filtros} onFiltrosChange={setFiltros} />
+      {/* Filtros com fundo "pôr do sol" e conteúdo branco */}
+      <Card className="border-none shadow-md overflow-hidden">
+        <CardContent className="p-0">
+          <div
+            className="px-4 py-3"
+            style={{
+              background:
+                "linear-gradient(90deg, #165A2A 0%, #FDBA74 45%, #FDE68A 80%, #F9FAFB 100%)",
+            }}
+          >
+            <div className="bg-white rounded-2xl shadow-sm px-3 py-3 md:px-4 md:py-4">
+              <FiltrosTransporte filtros={filtros} onFiltrosChange={setFiltros} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              {/* aqui troquei de bg-gray-50 para bg-blue-50 */}
               <TableRow className="bg-blue-50">
                 <TableHead className="text-[10px] font-semibold">PREVISÃO</TableHead>
                 <TableHead className="text-[10px] font-semibold">SOLICITANTE</TableHead>
@@ -113,13 +170,19 @@ export default function SolicitacoesTransporte() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  <TableCell
+                    colSpan={9}
+                    className="text-center py-8 text-gray-500"
+                  >
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : solicitacoesFiltradas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  <TableCell
+                    colSpan={9}
+                    className="text-center py-8 text-gray-500"
+                  >
                     Nenhuma solicitação encontrada
                   </TableCell>
                 </TableRow>
@@ -127,23 +190,41 @@ export default function SolicitacoesTransporte() {
                 solicitacoesFiltradas.map((sol) => (
                   <TableRow key={sol.id} className="hover:bg-gray-50">
                     <TableCell className="text-[10px]">
-                      {sol.previsao_br || (sol.previsao ? format(new Date(sol.previsao), "dd/MM/yy", { locale: ptBR }) : "-")}
+                      {sol.previsao_br ||
+                        (sol.previsao
+                          ? format(new Date(sol.previsao), "dd/MM/yy", {
+                              locale: ptBR,
+                            })
+                          : "-")}
                     </TableCell>
-                    <TableCell className="text-[10px]">{sol.solicitante}</TableCell>
+                    <TableCell className="text-[10px]">
+                      {sol.solicitante}
+                    </TableCell>
                     <TableCell className="text-[10px]">{sol.nota}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold">{sol.chassi_lista?.[0] || "SEM CHASSI"}</span>
+                        <span className="text-xs font-bold">
+                          {sol.chassi_lista?.[0] || "SEM CHASSI"}
+                        </span>
                         {sol.chassi_lista?.length > 1 && (
-                          <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">+{sol.chassi_lista.length - 1}</span>
+                          <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">
+                            +{sol.chassi_lista.length - 1}
+                          </span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="text-[10px]">{sol.esta}</TableCell>
                     <TableCell className="text-[10px]">{sol.vai}</TableCell>
-                    <TableCell className="text-[10px]">{sol.frete}</TableCell>
+                    <TableCell className="text-[10px]">
+                      {sol.frete}
+                    </TableCell>
                     <TableCell>
-                      <span className={`${statusColors[sol.status] || "bg-gray-100 text-gray-800"} text-[10px] rounded px-1 py-0.5 border`}>
+                      <span
+                        className={`${
+                          statusColors[sol.status] ||
+                          "bg-gray-100 text-gray-800"
+                        } text-[10px] rounded px-1 py-0.5 border`}
+                      >
                         {sol.status}
                       </span>
                     </TableCell>
