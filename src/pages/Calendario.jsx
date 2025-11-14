@@ -22,6 +22,7 @@ const parseBR = (s) => {
   const d = new Date(s);
   return isNaN(d) ? null : d;
 };
+
 const localKey = (dLike) => {
   const d = dLike instanceof Date ? dLike : parseBR(dLike);
   if (!d) return "";
@@ -40,25 +41,54 @@ export default function Calendario() {
 
   const { data: solicitacoes = [] } = useSolicitacoes();
 
+  /* ---------------- SEMANA ATUAL ---------------- */
+
   const diasSemana = eachDayOfInterval({ start: segundaFeira, end: sabado });
+
   const setSemanaKeys = useMemo(
     () => new Set(diasSemana.map((d) => localKey(d))),
     [segundaFeira.getTime()]
   );
 
+  /* ---------------- MÊS ATUAL (datas reais) ---------------- */
+
   const diasMes = eachDayOfInterval({ start: inicioMes, end: fimMes });
+
+  // chaves só pros dias que realmente existem no mês (pra buscar as solicitações)
   const setMesKeys = useMemo(
     () => new Set(diasMes.map((d) => localKey(d))),
     [inicioMes.getTime(), fimMes.getTime()]
   );
 
-  // Semana: RECEBIDO / PROGRAMADO / EM ROTA — AGRUPA E ORDENA POR PREV
+  // células do calendário mensal, com offset pra alinhar o dia 1 na coluna certa
+  const celulasMes = useMemo(() => {
+    const cells = [];
+    // getDay(): 0=DOM,1=SEG,...; queremos 0=SEG
+    const offset = (inicioMes.getDay() + 6) % 7; // segunda = 0, ... domingo = 6
+
+    // preenche células vazias antes do dia 1
+    for (let i = 0; i < offset; i++) {
+      cells.push(null);
+    }
+    // adiciona os dias reais do mês
+    for (const d of diasMes) {
+      cells.push(d);
+    }
+    // completa até múltiplo de 7
+    while (cells.length % 7 !== 0) {
+      cells.push(null);
+    }
+    return cells;
+  }, [inicioMes.getTime(), diasMes.length]);
+
+  /* ---------------- MAPA SEMANA (RECEBIDO/PROGRAMADO/EM ROTA) ---------------- */
+
   const mapaSemana = useMemo(() => {
     const m = new Map();
     for (const s of solicitacoes) {
       const base = s._status_base;
       if (!["RECEBIDO", "PROGRAMADO", "EM ROTA"].includes(base)) continue;
-      if (s._status_up?.includes("(D)")) continue;
+      if (s._status_up?.includes("(D)")) continue; // ignora demonstração
 
       const k = s._previsao_key || localKey(s.previsao_br || s.previsao);
       if (!k || !setSemanaKeys.has(k)) continue;
@@ -78,11 +108,12 @@ export default function Calendario() {
 
   const getSemana = (dia) => mapaSemana.get(localKey(dia)) || [];
 
-  // Mês: SOMENTE CONCLUÍDO — também por PREV (nada de REAL)
+  /* ---------------- MAPA MÊS (CONCLUÍDO) ---------------- */
+
   const mapaMes = useMemo(() => {
     const m = new Map();
     for (const s of solicitacoes) {
-      if (!s._status_up?.includes("CONCL")) continue;
+      if (!s._status_up?.includes("CONCL")) continue; // só concluído (inclusive (D) se quiser filtrar depois)
 
       const k = s._previsao_key || localKey(s.previsao_br || s.previsao);
       if (!k || !setMesKeys.has(k)) continue;
@@ -100,11 +131,13 @@ export default function Calendario() {
     return m;
   }, [solicitacoes, setMesKeys]);
 
-  const getMes = (dia) => mapaMes.get(localKey(dia)) || [];
+  const getMes = (dia) => (dia ? mapaMes.get(localKey(dia)) || [] : []);
+
+  /* ---------------- RENDER ---------------- */
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      {/* Banner do Calendário - mesmo "clima" do painel, um pouco mais estreito */}
+      {/* Banner do Calendário */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
@@ -114,7 +147,6 @@ export default function Calendario() {
                 "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
             }}
           >
-            {/* Retângulo branco interno com ícone e textos */}
             <div className="w-full max-w-lg bg-white/95 rounded-2xl shadow-md px-3 py-2 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
                 <CalendarIcon className="w-5 h-5 text-blue-600" />
@@ -156,7 +188,6 @@ export default function Calendario() {
                   key={dia.toString()}
                   className="bg-white rounded-lg border border-gray-200 overflow-visible"
                 >
-                  {/* Cabeçalho do dia com pôr do sol puxado pro verde */}
                   <div className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-amber-500 text-white p-3 text-center">
                     <p className="text-xs font-semibold">{diaSemana}</p>
                     <p className="text-2xl font-bold">{diaNumero}</p>
@@ -228,7 +259,7 @@ export default function Calendario() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-7 gap-2">
-            {/* Dias da semana - fundo verde escuro, texto branco */}
+            {/* Cabeçalho dos dias da semana */}
             {["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"].map((lab) => (
               <div
                 key={lab}
@@ -237,10 +268,23 @@ export default function Calendario() {
                 {lab}
               </div>
             ))}
-            {diasMes.map((dia) => {
+
+            {/* Células do mês, agora alinhadas certo */}
+            {celulasMes.map((dia, idx) => {
+              if (!dia) {
+                // célula vazia (antes do dia 1 ou depois do último)
+                return (
+                  <div
+                    key={`empty-${idx}`}
+                    className="min-h-[80px] rounded-lg border bg-gray-50 border-gray-200"
+                  />
+                );
+              }
+
               const solsDia = getMes(dia);
               const hojeKey = localKey(hoje);
               const isHoje = localKey(dia) === hojeKey;
+
               return (
                 <div
                   key={dia.toString()}
