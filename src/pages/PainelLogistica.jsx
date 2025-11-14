@@ -263,9 +263,6 @@ export default function PainelLogistica() {
                 <span className="text-base md:text-lg font-semibold text-emerald-100">
                   Visão geral das operações de transporte solicitadas via Forms.
                 </span>
-                <span className="text-xs text-slate-800/80">
-                  Registre aqui os pedidos de MÁQUINAS e PEÇAS/FRACIONADOS.
-                </span>
               </div>
             </div>
 
@@ -291,7 +288,7 @@ export default function PainelLogistica() {
                            hover:bg-emerald-50 transition"
               >
                 <ExternalLink className="w-4 h-4" />
-                Forms: Solicitação de Frete PEÇAS/FRACIONADOS
+                Forms: Solicitação de Frete PEÇAS
               </a>
             </div>
           </div>
