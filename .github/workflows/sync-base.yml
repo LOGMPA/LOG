@@ -1,0 +1,31 @@
+name: Sync BASE.xlsx from OneDrive
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # a cada 15 minutos
+  workflow_dispatch:          # permite rodar manualmente se você quiser
+
+jobs:
+  sync-base:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download BASE.xlsx from OneDrive
+        run: |
+          mkdir -p public/data
+          curl -L "https://1drv.ms/x/c/4b504997c31a5c11/EePSIm4WTQZIivVHJe986k0BTZe_W-1ddMjAwvRXlFwOlg?e=yJ8md3" -o public/data/BASE.xlsx
+
+      - name: Commit changes if file was updated
+        run: |
+          if git status --porcelain | grep "public/data/BASE.xlsx"; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/data/BASE.xlsx
+            git commit -m "Atualiza BASE.xlsx automático"
+            git push
+          else
+            echo "Sem mudanças no BASE.xlsx, nada a commitar"
+          fi
