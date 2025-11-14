@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import logisticaLogo from "./assets/ICONLOG.jpg"; // arquivo em: src/assets/ICONLOG.jpg
 
-// 
-const PASS_HASH = "c25843621ae06bd4c3ca85707dae016e46f947efb83fef1c098e0221e21003cf";
+// hash da senha correta (SHA-256)
+const PASS_HASH =
+  "c25843621ae06bd4c3ca85707dae016e46f947efb83fef1c098e0221e21003cf";
 
 async function sha256(message) {
   const msgBuffer = new TextEncoder().encode(message);
@@ -17,13 +18,6 @@ export default function AuthGate({ children }) {
   const [isAuthed, setIsAuthed] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const stored = localStorage.getItem("log-auth");
-    if (stored === "ok") {
-      setIsAuthed(true);
-    }
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -37,10 +31,11 @@ export default function AuthGate({ children }) {
     try {
       const hash = await sha256(value);
       if (hash === PASS_HASH) {
-        setIsAuthed(true);
-        localStorage.setItem("log-auth", "ok");
+        setIsAuthed(true);   // ✅ só memória, some no F5
+        setInput("");
       } else {
         setError("Senha incorreta.");
+        setInput("");
       }
     } catch (err) {
       console.error(err);
@@ -48,6 +43,7 @@ export default function AuthGate({ children }) {
     }
   };
 
+  // se já autenticou nesta execução, libera o app inteiro
   if (isAuthed) return children;
 
   return (
@@ -85,11 +81,7 @@ export default function AuthGate({ children }) {
               />
             </div>
 
-            {error && (
-              <p className="text-sm text-red-500">
-                {error}
-              </p>
-            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
             <button
               type="submit"
