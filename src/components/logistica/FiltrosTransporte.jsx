@@ -1,5 +1,5 @@
 import React from "react";
-import { Filter, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import {
@@ -31,28 +31,8 @@ export default function FiltrosTransporte({ filtros, onFiltrosChange }) {
   };
 
   return (
-    <div className="space-y-2">
-      {/* Título dos filtros */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100">
-            <Filter className="w-4 h-4 text-blue-600" />
-          </div>
-          <span className="text-[13px] font-semibold text-slate-800">
-            Filtros de Busca
-          </span>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-[11px] text-slate-500 hover:text-slate-800 hover:bg-slate-100 px-2"
-          onClick={handleReset}
-        >
-          Limpar filtros
-        </Button>
-      </div>
-
-      {/* Grid de filtros – 1 linha no desktop */}
+    <div className="space-y-1.5">
+      {/* Só a grade de filtros, sem título */}
       <div className="grid gap-2 grid-cols-1 md:grid-cols-3 lg:grid-cols-6">
         {/* CHASSI */}
         <div className="flex flex-col gap-0.5">
@@ -148,6 +128,18 @@ export default function FiltrosTransporte({ filtros, onFiltrosChange }) {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      {/* "Limpar filtros" minúsculo, embaixo do último filtro */}
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-[10px] text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+          onClick={handleReset}
+        >
+          Limpar filtros
+        </Button>
       </div>
     </div>
   );
