@@ -107,7 +107,7 @@ export default function SolicitacoesTransporte() {
 
   return (
     <div className="p-6 md:p-8 space-y-6">
-      {/* Banner/cabeçalho igual vibe do calendário/painel */}
+      {/* Banner/cabeçalho */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
@@ -134,37 +134,59 @@ export default function SolicitacoesTransporte() {
         </CardContent>
       </Card>
 
-      {/* Filtros com fundo "pôr do sol" e conteúdo branco */}
+      {/* Filtros com fundo "pôr do sol" e card mais compacto */}
       <Card className="border-none shadow-md overflow-hidden">
         <CardContent className="p-0">
           <div
-            className="px-4 py-3"
+            className="px-4 py-2"
             style={{
               background:
                 "linear-gradient(90deg, #165A2A 0%, #FDBA74 45%, #FDE68A 80%, #F9FAFB 100%)",
             }}
           >
-            <div className="bg-white rounded-2xl shadow-sm px-3 py-3 md:px-4 md:py-4">
-              <FiltrosTransporte filtros={filtros} onFiltrosChange={setFiltros} />
+            <div className="bg-white rounded-xl shadow-sm px-3 py-2 md:px-4 md:py-3">
+              <FiltrosTransporte
+                filtros={filtros}
+                onFiltrosChange={setFiltros}
+              />
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Tabela */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-blue-50">
-                <TableHead className="text-[10px] font-semibold">PREVISÃO</TableHead>
-                <TableHead className="text-[10px] font-semibold">SOLICITANTE</TableHead>
-                <TableHead className="text-[10px] font-semibold">CLIENTE/NOTA</TableHead>
-                <TableHead className="text-[10px] font-semibold">CHASSI</TableHead>
-                <TableHead className="text-[10px] font-semibold">ESTÁ EM</TableHead>
-                <TableHead className="text-[10px] font-semibold">VAI PARA</TableHead>
-                <TableHead className="text-[10px] font-semibold">TRANSPORTE</TableHead>
-                <TableHead className="text-[10px] font-semibold">STATUS</TableHead>
-                <TableHead className="text-[10px] font-semibold">LOC</TableHead>
+              <TableRow className="bg-blue-100">
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  PREVISÃO
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  SOLICITANTE
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  CLIENTE/NOTA
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  CHASSI
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  ESTÁ EM
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  VAI PARA
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  TRANSPORTE
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  STATUS
+                </TableHead>
+                <TableHead className="text-[10px] font-semibold text-blue-900">
+                  LOC
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
