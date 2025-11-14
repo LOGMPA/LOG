@@ -70,14 +70,13 @@ const BADGE_TEXT = "#FFFFFF";
 const TOTAL_COLOR = "#092357"; // azul-escuro do total no topo
 
 /* ========= Labels custom ========= */
-// Badge de quantidade centralizado no topo da pilha
 function QtdBadge({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
   const w = 24;
   const h = 16;
   const cx = x + width / 2 - w / 2;
-  const cy = y - h - 2; // encosta no topo da pilha
+  const cy = y - h - 2;
   return (
     <g>
       <rect x={cx} y={cy} rx={3} ry={3} width={w} height={h} fill={BADGE_BG} />
@@ -95,12 +94,11 @@ function QtdBadge({ viewBox, value }) {
   );
 }
 
-// Total acima do badge (sem sobrepor)
 function TotalLabel({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
   const cx = x + width / 2;
-  const cy = y - 26; // sobe mais que o badge (h=16 + gap)
+  const cy = y - 26;
   return (
     <text
       x={cx}
@@ -116,7 +114,6 @@ function TotalLabel({ viewBox, value }) {
 }
 
 export default function PainelLogistica() {
-  // filtros legados (mantidos se precisar no futuro)
   const [dataInicio] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [dataFim] = useState(format(new Date(), "yyyy-MM"));
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
@@ -150,7 +147,6 @@ export default function PainelLogistica() {
     },
   };
 
-  /* ========= Cards: contadores ========= */
   const contagemStatus = useMemo(() => {
     const base = solicitacoes.filter((s) => !s._status_up?.includes("(D)"));
     return {
@@ -161,7 +157,6 @@ export default function PainelLogistica() {
     };
   }, [solicitacoes]);
 
-  /* ========= Listas por status ========= */
   const recebidos = useMemo(
     () =>
       solicitacoes
@@ -206,7 +201,6 @@ export default function PainelLogistica() {
     [solicitacoes]
   );
 
-  /* ========= Gráfico: só CONCLUÍDO/(D), usa Custo por Filial ========= */
   const dadosCidadesColuna = useMemo(() => {
     const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
@@ -220,7 +214,7 @@ export default function PainelLogistica() {
         : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
-      const cidade = canonCidade(s.custo_cidade); // "Custo por Filial"
+      const cidade = canonCidade(s.custo_cidade);
       if (!cidade) continue;
 
       const valorProp = Number(s.valor_prop || 0);
@@ -237,13 +231,13 @@ export default function PainelLogistica() {
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
       qtd: qtd[c] || 0,
-      zero: 0, // dummy para empilhar labels
+      zero: 0,
     }));
   }, [solicitacoes, mesRef]);
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      {/* Banner de formulários inspirado no ícone */}
+      {/* Banner principal do painel + Forms */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
@@ -253,7 +247,7 @@ export default function PainelLogistica() {
                 "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
             }}
           >
-            {/* Lado esquerdo: logo + texto */}
+            {/* Lado esquerdo: logo + título oficial */}
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-white">
                 <img
@@ -263,11 +257,11 @@ export default function PainelLogistica() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-semibold tracking-wide text-emerald-100 uppercase">
-                  Logística · Sistema 2026
+                <span className="text-base md:text-lg font-bold text-white">
+                  MacPonta Agro • Painel Logística 2026
                 </span>
-                <span className="text-sm md:text-base font-semibold text-slate-900">
-                  Formulários de Solicitação de Frete
+                <span className="text-sm md:text-base font-semibold text-emerald-100">
+                  Visão geral das operações de transporte solicitadas via Forms.
                 </span>
                 <span className="text-xs text-slate-800/80">
                   Registre aqui os pedidos de MÁQUINAS e PEÇAS/FRACIONADOS.
@@ -281,7 +275,7 @@ export default function PainelLogistica() {
                 href={FORM_FRETE_MAQUINA}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-semibold
+                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold
                            rounded-lg bg-white/95 text-emerald-800 border border-emerald-300
                            hover:bg-emerald-50 transition"
               >
@@ -292,7 +286,7 @@ export default function PainelLogistica() {
                 href={FORM_FRETE_PECAS}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-semibold
+                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold
                            rounded-lg bg-white/95 text-emerald-800 border border-emerald-300
                            hover:bg-emerald-50 transition"
               >
@@ -303,15 +297,6 @@ export default function PainelLogistica() {
           </div>
         </CardContent>
       </Card>
-
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          MacPonta Agro • Painel Logística 2026
-        </h1>
-        <p className="text-gray-600">
-          Visão geral das operações de transporte solicitadas via Forms.
-        </p>
-      </div>
 
       {/* Cards de status */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -460,7 +445,6 @@ export default function PainelLogistica() {
                 labelFormatter={(label) => `Cidade: ${label}`}
               />
 
-              {/* Terceiro (amarelo) e Próprio (verde) empilhados */}
               <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
                 <LabelList
                   dataKey="terc"
@@ -484,7 +468,6 @@ export default function PainelLogistica() {
                 />
               </Bar>
 
-              {/* Barra dummy (altura zero) no MESMO stack para posicionar QTD e TOTAL */}
               <Bar dataKey="zero" stackId="v" fill="transparent">
                 <LabelList dataKey="qtd" content={<QtdBadge />} />
                 <LabelList dataKey="total" content={<TotalLabel />} />
