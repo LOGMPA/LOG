@@ -1,9 +1,13 @@
 name: Sync BASE.xlsx from OneDrive
 
+# 👇 ISSO AQUI É IMPORTANTE
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: "*/15 * * * *"   # a cada 15 minutos
-  workflow_dispatch:          # permite rodar manualmente se você quiser
+  workflow_dispatch:          # permite rodar manualmente
 
 jobs:
   sync-base:
