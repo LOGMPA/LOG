@@ -15,6 +15,27 @@ import { Badge } from "../components/ui/badge";
 import FiltrosTransporte from "../components/logistica/FiltrosTransporte";
 import { Card, CardContent } from "../components/ui/card";
 
+/** Acha qualquer link (https://...) em loc, esta ou vai */
+const getLinkUrl = (sol) => {
+  if (sol.loc && String(sol.loc).includes("http")) return sol.loc;
+
+  const fontes = [sol.esta, sol.vai];
+  for (const fonte of fontes) {
+    if (!fonte) continue;
+    const match = String(fonte).match(/https?:\/\/\S+/);
+    if (match) return match[0];
+  }
+  return null;
+};
+
+/** Verifica se é transferência entre lojas (ESTÁ EM e VAI PARA contém MPA, sem link) */
+const isTransferMPA = (sol) => {
+  const esta = String(sol.esta || "").trim().toUpperCase();
+  const vai = String(sol.vai || "").trim().toUpperCase();
+  if (!esta || !vai) return false;
+  return esta.includes("MPA") && vai.includes("MPA");
+};
+
 export default function SolicitacoesTransporte() {
   const [filtros, setFiltros] = useState({
     chassi: "",
@@ -76,7 +97,7 @@ export default function SolicitacoesTransporte() {
         const df = new Date(filtros.dataFim);
         if (d > df) return false;
       }
-      // filtro de status específico (se selecionar no dropdown)
+      // filtro de status específico
       if (filtros.status !== "all") {
         if (String(s.status) !== filtros.status) return false;
       }
@@ -134,7 +155,7 @@ export default function SolicitacoesTransporte() {
         </CardContent>
       </Card>
 
-      {/* Filtros com fundo "pôr do sol" e card mais compacto */}
+      {/* Filtros */}
       <Card className="border-none shadow-md overflow-hidden">
         <CardContent className="p-0">
           <div
@@ -209,63 +230,78 @@ export default function SolicitacoesTransporte() {
                   </TableCell>
                 </TableRow>
               ) : (
-                solicitacoesFiltradas.map((sol) => (
-                  <TableRow key={sol.id} className="hover:bg-gray-50">
-                    <TableCell className="text-[10px]">
-                      {sol.previsao_br ||
-                        (sol.previsao
-                          ? format(new Date(sol.previsao), "dd/MM/yy", {
-                              locale: ptBR,
-                            })
-                          : "-")}
-                    </TableCell>
-                    <TableCell className="text-[10px]">
-                      {sol.solicitante}
-                    </TableCell>
-                    <TableCell className="text-[10px]">{sol.nota}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold">
-                          {sol.chassi_lista?.[0] || "SEM CHASSI"}
-                        </span>
-                        {sol.chassi_lista?.length > 1 && (
-                          <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">
-                            +{sol.chassi_lista.length - 1}
+                solicitacoesFiltradas.map((sol) => {
+                  const linkUrl = getLinkUrl(sol);
+                  const isTransfer = !linkUrl && isTransferMPA(sol);
+
+                  return (
+                    <TableRow key={sol.id} className="hover:bg-gray-50">
+                      <TableCell className="text-[10px]">
+                        {sol.previsao_br ||
+                          (sol.previsao
+                            ? format(new Date(sol.previsao), "dd/MM/yy", {
+                                locale: ptBR,
+                              })
+                            : "-")}
+                      </TableCell>
+                      <TableCell className="text-[10px]">
+                        {sol.solicitante}
+                      </TableCell>
+                      <TableCell className="text-[10px]">
+                        {sol.nota}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold">
+                            {sol.chassi_lista?.[0] || "SEM CHASSI"}
                           </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-[10px]">{sol.esta}</TableCell>
-                    <TableCell className="text-[10px]">{sol.vai}</TableCell>
-                    <TableCell className="text-[10px]">
-                      {sol.frete}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`${
-                          statusColors[sol.status] ||
-                          "bg-gray-100 text-gray-800"
-                        } text-[10px] rounded px-1 py-0.5 border`}
-                      >
-                        {sol.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {sol.loc ? (
-                        <a
-                          href={sol.loc}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                          {sol.chassi_lista?.length > 1 && (
+                            <span className="text-[9px] px-1 py-0 bg-gray-100 rounded">
+                              +{sol.chassi_lista.length - 1}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-[10px]">{sol.esta}</TableCell>
+                      <TableCell className="text-[10px]">{sol.vai}</TableCell>
+                      <TableCell className="text-[10px]">
+                        {sol.frete}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`${
+                            statusColors[sol.status] ||
+                            "bg-gray-100 text-gray-800"
+                          } text-[10px] rounded px-1 py-0.5 border`}
                         >
-                          <MapPin className="w-4 h-4" />
-                        </a>
-                      ) : (
-                        <span className="text-gray-300">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {sol.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {linkUrl ? (
+                          <a
+                            href={linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center"
+                            title="Abrir localização"
+                          >
+                            <MapPin className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+                          </a>
+                        ) : isTransfer ? (
+                          <span
+                            className="text-base leading-none"
+                            title="Transferência entre lojas (MPA → MPA)"
+                          >
+                            🔄️
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 text-xs">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
