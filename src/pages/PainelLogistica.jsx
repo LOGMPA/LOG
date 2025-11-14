@@ -17,8 +17,8 @@ import SolicitacaoCard from "../components/logistica/SolicitacaoCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
 /* ====== LINKS DOS FORMULÁRIOS ====== */
-const FORM_FRETE_MAQUINA = "https://seu-link-aqui.exemplo"; // cole o link real
-const FORM_FRETE_PECAS   = "https://seu-link-aqui.exemplo"; // cole o link real
+const FORM_FRETE_MAQUINA = "https://forms.office.com/r/SaYf3D9bz4"; // cole o link real
+const FORM_FRETE_PECAS   = "https://forms.office.com/r/A7wSsGC5fV"; // cole o link real
 
 /* ========= Datas locais (sem UTC) ========= */
 const parseBR = (s) => {
