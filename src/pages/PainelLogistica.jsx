@@ -61,13 +61,13 @@ const CIDADES = [
 const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
-/* ========= Cores ========= */
-const COR_TERC = "#F2B300"; // Terceiro
-const COR_PROP = "#1B5E20"; // Próprio
-const GRID_LIGHT = "#ECECEC";
-const BADGE_BG = "#0B2B6B";
+/* ========= Cores (ajustadas p/ ficar mais harmônico) ========= */
+const COR_TERC = "#F59E0B";   // Terceiro - ambar mais suave
+const COR_PROP = "#15803D";   // Próprio - verde estilo John Deere
+const GRID_LIGHT = "#E2E8F0"; // grid cinza-claro
+const BADGE_BG = "#065F46";   // badge verde-escuro
 const BADGE_TEXT = "#FFFFFF";
-const TOTAL_COLOR = "#092357";
+const TOTAL_COLOR = "#022C22"; // total em verde bem escuro
 
 /* ========= Labels custom ========= */
 function QtdBadge({ viewBox, value }) {
@@ -325,59 +325,68 @@ export default function PainelLogistica() {
 
       {/* Listas por status */}
       <div className="grid lg:grid-cols-3 gap-6">
+        {/* RECEBIDO */}
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-gray-700">
               RECEBIDO
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {recebidos.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">
                 Nenhuma solicitação
               </p>
             ) : (
-              recebidos.map((sol) => (
-                <SolicitacaoCard key={sol.id} solicitacao={sol} />
-              ))
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {recebidos.map((sol) => (
+                  <SolicitacaoCard key={sol.id} solicitacao={sol} />
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
 
+        {/* PROGRAMADO */}
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-blue-700">
               PROGRAMADO
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {programados.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">
                 Nenhuma solicitação
               </p>
             ) : (
-              programados.map((sol) => (
-                <SolicitacaoCard key={sol.id} solicitacao={sol} />
-              ))
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {programados.map((sol) => (
+                  <SolicitacaoCard key={sol.id} solicitacao={sol} />
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
 
+        {/* EM ROTA */}
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-amber-700">
               EM ROTA
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {emRota.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">
                 Nenhuma solicitação
               </p>
             ) : (
-              emRota.map((sol) => (
-                <SolicitacaoCard key={sol.id} solicitacao={sol} />
-              ))
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {emRota.map((sol) => (
+                  <SolicitacaoCard key={sol.id} solicitacao={sol} />
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -391,7 +400,8 @@ export default function PainelLogistica() {
               Custos (Status Concluídos)
             </CardTitle>
             <p className="text-gray-600">
-              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio (verde).
+              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio
+              (verde).
             </p>
           </div>
           <div className="flex items-center gap-3">
