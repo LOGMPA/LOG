@@ -61,32 +61,43 @@ const CIDADES = [
 const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
-/* ========= Cores (ajustadas p/ ficar mais harmônico) ========= */
-const COR_TERC = "#F59E0B";   // Terceiro - ambar mais suave
-const COR_PROP = "#15803D";   // Próprio - verde estilo John Deere
-const GRID_LIGHT = "#E2E8F0"; // grid cinza-claro
-const BADGE_BG = "#065F46";   // badge verde-escuro
-const BADGE_TEXT = "#FFFFFF";
-const TOTAL_COLOR = "#022C22"; // total em verde bem escuro
+/* ========= Cores (harmonizadas) ========= */
+const COR_TERC = "#F59E0B";   // Terceiro - ambar suave
+const COR_PROP = "#15803D";   // Próprio - verde JD
+const GRID_LIGHT = "#E2E8F0";
+const BADGE_BG = "#0F172A";   // base da quantidade
+const BADGE_TEXT = "#F9FAFB";
+const TOTAL_COLOR = "#022C22";
 
 /* ========= Labels custom ========= */
-function QtdBadge({ viewBox, value }) {
+// Base embaixo da barra com a QUANTIDADE total (estilo “tijolinho” do exemplo)
+function QtdBaseLabel({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
-  const w = 24;
-  const h = 16;
-  const cx = x + width / 2 - w / 2;
-  const cy = y - h - 2;
+  const h = 22;
+
+  // y é a linha do eixo (base da barra). Desço um pouco pra não colar.
+  const rectX = x;
+  const rectY = y + 4;
+
   return (
     <g>
-      <rect x={cx} y={cy} rx={3} ry={3} width={w} height={h} fill={BADGE_BG} />
+      <rect
+        x={rectX}
+        y={rectY}
+        width={width}
+        height={h}
+        rx={3}
+        ry={3}
+        fill={BADGE_BG}
+      />
       <text
-        x={cx + w / 2}
-        y={cy + h / 2 + 4}
+        x={rectX + width / 2}
+        y={rectY + h / 2 + 4}
         textAnchor="middle"
-        fontSize="10"
+        fontSize="11"
         fill={BADGE_TEXT}
-        fontWeight="600"
+        fontWeight="700"
       >
         {value}
       </text>
@@ -94,6 +105,7 @@ function QtdBadge({ viewBox, value }) {
   );
 }
 
+// Total em R$ lá em cima, igual já estava
 function TotalLabel({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
@@ -247,7 +259,6 @@ export default function PainelLogistica() {
                 "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
             }}
           >
-            {/* Lado esquerdo: logo + título oficial */}
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-white">
                 <img
@@ -266,7 +277,6 @@ export default function PainelLogistica() {
               </div>
             </div>
 
-            {/* Lado direito: botões dos Forms (mesma largura) */}
             <div className="flex flex-col gap-2 w-full md:w-80 justify-start md:items-end">
               <a
                 href={FORM_FRETE_MAQUINA}
@@ -323,9 +333,8 @@ export default function PainelLogistica() {
         />
       </div>
 
-      {/* Listas por status */}
+      {/* Listas por status com scroll */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* RECEBIDO */}
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-gray-700">
@@ -347,7 +356,6 @@ export default function PainelLogistica() {
           </CardContent>
         </Card>
 
-        {/* PROGRAMADO */}
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-blue-700">
@@ -369,7 +377,6 @@ export default function PainelLogistica() {
           </CardContent>
         </Card>
 
-        {/* EM ROTA */}
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-amber-700">
@@ -400,8 +407,7 @@ export default function PainelLogistica() {
               Custos (Status Concluídos)
             </CardTitle>
             <p className="text-gray-600">
-              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio
-              (verde).
+              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio (verde).
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -419,7 +425,7 @@ export default function PainelLogistica() {
           <ResponsiveContainer width="100%" height={380}>
             <BarChart
               data={dadosCidadesColuna}
-              margin={{ top: 48, right: 16, left: 0, bottom: 34 }}
+              margin={{ top: 48, right: 16, left: 0, bottom: 60 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_LIGHT} />
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
@@ -475,8 +481,9 @@ export default function PainelLogistica() {
                 />
               </Bar>
 
+              {/* Barra dummy p/ base (qtd) + topo (total em R$) */}
               <Bar dataKey="zero" stackId="v" fill="transparent">
-                <LabelList dataKey="qtd" content={<QtdBadge />} />
+                <LabelList dataKey="qtd" content={<QtdBaseLabel />} />
                 <LabelList dataKey="total" content={<TotalLabel />} />
               </Bar>
             </BarChart>
