@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import logisticaLogo from "./assets/ICONLOG.jpg"; // ajuste o caminho se o arquivo estiver em outra pasta
+import logisticaLogo from "./assets/ICONLOG.jpg"; // arquivo em: src/assets/ICONLOG.jpg
 
-// ATENÇÃO: troque pelo hash correto que você já usava antes.
-// Isso aqui é só exemplo. Não coloque a senha pura.
-const PASS_HASH = "SEU_HASH_AQUI";
+// SHA-256 da senha "MPA"
+const PASS_HASH = "c25843621ae06bd4c3ca85707dae016e46f947efb83fef1c098e0221e21003cf";
 
 async function sha256(message) {
   const msgBuffer = new TextEncoder().encode(message);
@@ -13,7 +12,7 @@ async function sha256(message) {
   return hashHex;
 }
 
-export function AuthGate({ children }) {
+export default function AuthGate({ children }) {
   const [input, setInput] = useState("");
   const [isAuthed, setIsAuthed] = useState(false);
   const [error, setError] = useState("");
@@ -54,7 +53,7 @@ export function AuthGate({ children }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 px-4">
       <div className="flex flex-col items-center">
-        {/* LOGO REDONDA */}
+        {/* LOGO REDONDA GRANDE */}
         <div className="w-40 h-40 mb-4 rounded-full overflow-hidden shadow-lg border-4 border-white bg-white">
           <img
             src={logisticaLogo}
