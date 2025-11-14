@@ -121,14 +121,15 @@ export default function SolicitacoesTransporte() {
 
   return (
     <div className="p-6 md:p-8 space-y-4">
-      {/* Banner/cabeçalho - agora com verde + azul */}
+      {/* Banner/cabeçalho - pôr do sol azul */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
             className="px-4 py-2"
             style={{
               background:
-                "linear-gradient(90deg, #0F766E 0%, #1D4ED8 35%, #60A5FA 70%, #EFF6FF 100%)",
+                // azul profundo → azul claro → laranja pôr do sol → amarelo bem suave
+                "linear-gradient(90deg, #0F172A 0%, #1D4ED8 25%, #38BDF8 55%, #FDBA74 80%, #FEF9C3 100%)",
             }}
           >
             <div className="w-full max-w-2xl bg-white/95 rounded-xl shadow-md px-3 py-2 flex items-center gap-3">
@@ -148,14 +149,15 @@ export default function SolicitacoesTransporte() {
         </CardContent>
       </Card>
 
-      {/* Filtros - fundo azul bem claro */}
+      {/* Filtros - azul clarinho com toque de pôr do sol bem de leve */}
       <Card className="border-none shadow-md overflow-hidden">
         <CardContent className="p-0">
           <div
             className="px-3 py-1.5"
             style={{
               background:
-                "linear-gradient(90deg, #DBEAFE 0%, #E5F0FF 45%, #F9FAFF 100%)",
+                // azul bem claro → quase branco → bege/creme suave
+                "linear-gradient(90deg, #E0F2FE 0%, #EFF6FF 45%, #FFF7ED 100%)",
             }}
           >
             <div className="bg-white rounded-lg shadow-sm px-3 py-2 md:px-4 md:py-2">
