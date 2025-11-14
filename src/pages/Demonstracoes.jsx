@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useSolicitacoes } from "../hooks/useSolicitacoes";
+import { useSolicitacoes } from "../hooks/useLogisticaBase";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Presentation } from "lucide-react";
