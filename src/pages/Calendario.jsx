@@ -104,7 +104,7 @@ export default function Calendario() {
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      {/* Banner do Calendário - mesmo "clima" do painel, mais compacto */}
+      {/* Banner do Calendário - mesmo "clima" do painel, um pouco mais estreito */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
@@ -115,7 +115,7 @@ export default function Calendario() {
             }}
           >
             {/* Retângulo branco interno com ícone e textos */}
-            <div className="max-w-xl bg-white/95 rounded-2xl shadow-md px-3 py-2 flex items-center gap-3">
+            <div className="w-full max-w-lg bg-white/95 rounded-2xl shadow-md px-3 py-2 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
                 <CalendarIcon className="w-5 h-5 text-blue-600" />
               </div>
@@ -134,12 +134,12 @@ export default function Calendario() {
 
       {/* SEMANA ATUAL */}
       <Card className="border-none shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+        <CardHeader className="border-b bg-gradient-to-r from-emerald-50 via-amber-50 to-emerald-50">
           <CardTitle className="text-xl font-bold text-gray-900">
             Semana Atual - {format(segundaFeira, "dd/MM", { locale: ptBR })} a{" "}
             {format(sabado, "dd/MM", { locale: ptBR })}
           </CardTitle>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-700">
             Status: RECEBIDO, PROGRAMADO, EM ROTA
           </p>
         </CardHeader>
@@ -156,10 +156,12 @@ export default function Calendario() {
                   key={dia.toString()}
                   className="bg-white rounded-lg border border-gray-200 overflow-visible"
                 >
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 text-center">
+                  {/* Cabeçalho do dia com pôr do sol puxado pro verde */}
+                  <div className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-amber-500 text-white p-3 text-center">
                     <p className="text-xs font-semibold">{diaSemana}</p>
                     <p className="text-2xl font-bold">{diaNumero}</p>
                   </div>
+
                   <div className="p-3 space-y-2">
                     {solsDia.length === 0 ? (
                       <p className="text-xs text-gray-400 text-center py-4">
@@ -226,14 +228,11 @@ export default function Calendario() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-7 gap-2">
+            {/* Dias da semana - fundo verde escuro, texto branco */}
             {["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"].map((lab) => (
               <div
                 key={lab}
-                className="text-center text-xs font-semibold text-amber-900 py-2 rounded-md"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #FDBA74 0%, #FDE68A 100%)",
-                }}
+                className="text-center text-xs font-semibold text-white py-2 rounded-md bg-emerald-700"
               >
                 {lab}
               </div>
