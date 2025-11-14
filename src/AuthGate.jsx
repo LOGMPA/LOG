@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import logisticaLogo from "../assets/ICONLOG.jpg"; // ajusta o caminho se o arquivo estiver em outro lugar
+import logisticaLogo from "./assets/ICONLOG.jpg"; // ajuste o caminho se o arquivo estiver em outra pasta
 
-// Mesmo hash de antes. NÃO coloca a senha pura aqui.
-const PASS_HASH = "c2584e8c8f6e8d3f7f2e8f7f0c9a9b0b4e3b0f0d2c3e1a9b7d4e3f9b0c3d0e3"; // exemplo, mantém o teu
+// ATENÇÃO: troque pelo hash correto que você já usava antes.
+// Isso aqui é só exemplo. Não coloque a senha pura.
+const PASS_HASH = "SEU_HASH_AQUI";
 
 async function sha256(message) {
   const msgBuffer = new TextEncoder().encode(message);
@@ -79,3 +80,34 @@ export function AuthGate({ children }) {
               <input
                 type="password"
                 value={input}
+                onChange={(e) => setInput(e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-[#3C6F1F]"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-500">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full rounded-md px-4 py-2 text-sm font-semibold text-white
+                         bg-[#3C6F1F] hover:bg-[#335a19]
+                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3C6F1F]
+                         transition"
+            >
+              Entrar
+            </button>
+          </form>
+
+          <p className="mt-4 text-center text-xs text-slate-400">
+            Logística 2026.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
