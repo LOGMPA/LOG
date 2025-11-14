@@ -20,6 +20,7 @@ const parseBR = (s) => {
   const d = new Date(s);
   return isNaN(d) ? null : d;
 };
+
 const keyLocal = (dLike) => {
   const d = dLike instanceof Date ? dLike : parseBR(dLike);
   if (!d) return "";
@@ -76,7 +77,7 @@ export default function Demonstracoes() {
     return map;
   }, [solicitacoes, inicioMes.getTime(), fimMes.getTime()]);
 
-  const getDoDia = (dia) => mapaDia.get(keyLocal(dia)) || [];
+  const getDoDia = (dia) => (dia ? mapaDia.get(keyLocal(dia)) || [] : []);
 
   const statusColors = {
     "RECEBIDO (D)": "bg-purple-100 text-purple-800 border-purple-200",
@@ -89,6 +90,24 @@ export default function Demonstracoes() {
     for (const d of mapaDia.values()) n += d.length;
     return n;
   }, [mapaDia]);
+
+  // ***** AQUI: monta as células do mês com offset, igual no calendário principal *****
+  const celulasMes = useMemo(() => {
+    const cells = [];
+    // getDay(): 0=DOM,1=SEG,...; queremos 0=SEG
+    const offset = (inicioMes.getDay() + 6) % 7; // segunda = 0, ... domingo = 6
+
+    // células vazias antes do dia 1
+    for (let i = 0; i < offset; i++) cells.push(null);
+
+    // dias reais do mês
+    for (const d of diasMes) cells.push(d);
+
+    // completa até múltiplo de 7
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    return cells;
+  }, [inicioMes.getTime(), diasMes.length]);
 
   return (
     <div className="p-6 md:p-8 space-y-4">
@@ -120,13 +139,12 @@ export default function Demonstracoes() {
         </CardContent>
       </Card>
 
-      {/* “Filtro” de mês no mesmo estilo dos outros filtros */}
+      {/* Filtro de mês */}
       <Card className="border-none shadow-md overflow-hidden">
         <CardContent className="p-0">
           <div
             className="px-3 py-1.5"
             style={{
-              // roxo clarinho + azul clarinho + amarelo bem suave
               background:
                 "linear-gradient(90deg, #F3E8FF 0%, #E0F2FE 40%, #FEF3C7 100%)",
             }}
@@ -170,7 +188,18 @@ export default function Demonstracoes() {
                 {dia}
               </div>
             ))}
-            {diasMes.map((dia) => {
+
+            {/* Células alinhadas com offset */}
+            {celulasMes.map((dia, idx) => {
+              if (!dia) {
+                return (
+                  <div
+                    key={`empty-${idx}`}
+                    className="min-h-[120px] p-2 rounded-lg border bg-gray-50 border-gray-200"
+                  />
+                );
+              }
+
               const solsDia = getDoDia(dia);
               const hojeKey = keyLocal(new Date());
               const isHoje = keyLocal(dia) === hojeKey;
