@@ -3,8 +3,12 @@ import { useSolicitacoes } from "../hooks/useSolicitacoes";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Presentation } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Label } from "../components/ui/label";
 
 // helpers de data 100% local (sem UTC)
@@ -87,39 +91,82 @@ export default function Demonstracoes() {
   }, [mapaDia]);
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
-      <div className="flex items-center gap-3 mb-2">
-        <Presentation className="w-8 h-8 text-purple-600" />
-        <h1 className="text-3xl font-bold text-gray-900">Demonstrações</h1>
-      </div>
-      <p className="text-gray-600">Calendário de demonstrações de equipamentos</p>
+    <div className="p-6 md:p-8 space-y-4">
+      {/* Banner / cabeçalho estilo painel */}
+      <Card className="border-none shadow-lg overflow-hidden">
+        <CardContent className="p-0">
+          <div
+            className="px-4 py-2"
+            style={{
+              // base verde + roxo + amarelo = pôr do sol maconhado
+              background:
+                "linear-gradient(90deg, #14532D 0%, #22C55E 22%, #A855F7 50%, #F97316 78%, #FEF3C7 100%)",
+            }}
+          >
+            <div className="w-full max-w-2xl bg-white/95 rounded-xl shadow-md px-3 py-2 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100">
+                <Presentation className="w-5 h-5 text-purple-600" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg md:text-2xl font-extrabold text-slate-900">
+                  Demonstrações
+                </span>
+                <span className="text-sm md:text-base text-slate-600">
+                  Calendário de demonstrações de equipamentos.
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-4">
-          <Label htmlFor="mesAno" className="text-sm font-semibold text-gray-700">
-            Selecionar Mês:
-          </Label>
-          <input
-            id="mesAno"
-            type="month"
-            value={mesAno}
-            onChange={(e) => setMesAno(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          />
-        </div>
-      </div>
+      {/* “Filtro” de mês no mesmo estilo dos outros filtros */}
+      <Card className="border-none shadow-md overflow-hidden">
+        <CardContent className="p-0">
+          <div
+            className="px-3 py-1.5"
+            style={{
+              // roxo clarinho + azul clarinho + amarelo bem suave
+              background:
+                "linear-gradient(90deg, #F3E8FF 0%, #E0F2FE 40%, #FEF3C7 100%)",
+            }}
+          >
+            <div className="bg-white rounded-lg shadow-sm px-3 py-2 md:px-4 md:py-2 flex flex-wrap items-center gap-4">
+              <Label
+                htmlFor="mesAno"
+                className="text-xs md:text-sm font-semibold text-gray-700"
+              >
+                Selecionar mês:
+              </Label>
+              <input
+                id="mesAno"
+                type="month"
+                value={mesAno}
+                onChange={(e) => setMesAno(e.target.value)}
+                className="px-3 h-8 border border-gray-300 rounded-lg text-xs md:text-sm"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Calendário do mês selecionado */}
       <Card className="border-none shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-purple-50 to-indigo-50">
-          <CardTitle className="text-xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-extrabold text-purple-800">
             {format(dataRef, "MMMM yyyy", { locale: ptBR })}
           </CardTitle>
-          <p className="text-sm text-gray-600">Total de demonstrações: {totalDemo}</p>
+          <p className="text-sm font-semibold text-purple-600">
+            Total de demonstrações: {totalDemo}
+          </p>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-7 gap-2">
             {["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"].map((dia) => (
-              <div key={dia} className="text-center text-xs font-semibold text-gray-600 py-2">
+              <div
+                key={dia}
+                className="text-center text-xs font-semibold text-gray-600 py-2"
+              >
                 {dia}
               </div>
             ))}
@@ -132,7 +179,9 @@ export default function Demonstracoes() {
                 <div
                   key={dia.toString()}
                   className={`min-h-[120px] p-2 rounded-lg border ${
-                    isHoje ? "bg-purple-50 border-purple-300" : "bg-white border-gray-200"
+                    isHoje
+                      ? "bg-purple-50 border-purple-300"
+                      : "bg-white border-gray-200"
                   }`}
                 >
                   <p
@@ -153,12 +202,16 @@ export default function Demonstracoes() {
                         <div
                           key={sol.id}
                           className={`rounded-lg p-2 border ${cls}`}
-                          title={`${sol.chassi_lista?.[0] || "SEM CHASSI"} - ${sol.nota || ""}`}
+                          title={`${
+                            sol.chassi_lista?.[0] || "SEM CHASSI"
+                          } - ${sol.nota || ""}`}
                         >
                           <p className="text-[9px] font-bold truncate">
                             {sol.chassi_lista?.[0] || "SEM CHASSI"}
                           </p>
-                          <p className="text-[9px] truncate mt-0.5">{sol.nota}</p>
+                          <p className="text-[9px] truncate mt-0.5">
+                            {sol.nota}
+                          </p>
                           <span className="text-[8px] px-1 py-0 mt-1 inline-block bg-white rounded border">
                             {st.replace(" (D)", "")}
                           </span>
@@ -166,7 +219,9 @@ export default function Demonstracoes() {
                       );
                     })}
                     {solsDia.length === 0 && (
-                      <p className="text-[10px] text-gray-400 text-center">—</p>
+                      <p className="text-[10px] text-gray-400 text-center">
+                        —
+                      </p>
                     )}
                   </div>
                 </div>
@@ -176,8 +231,11 @@ export default function Demonstracoes() {
         </CardContent>
       </Card>
 
+      {/* Legenda */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-4">Legenda de Status</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+          Legenda de Status
+        </h3>
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-purple-100 border border-purple-200" />
