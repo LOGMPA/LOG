@@ -242,7 +242,7 @@ export default function PainelLogistica() {
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             {/* Logo pequena e redonda no lugar de "Formulários:" */}
             <div className="flex items-center justify-start">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md bg-white">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-white">
                 <img
                   src={logisticaLogo}
                   alt="Logística MacPonta Agro"
