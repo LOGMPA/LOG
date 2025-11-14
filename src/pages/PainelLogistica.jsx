@@ -60,21 +60,21 @@ const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
 /* ========= Cores ========= */
-const COR_TERC = "#F2B300";   // amarelo mais escuro (Terceiro)
-const COR_PROP = "#1B5E20";   // verde escuro (Próprio)
+const COR_TERC = "#F2B300"; // amarelo mais escuro (Terceiro)
+const COR_PROP = "#1B5E20"; // verde escuro (Próprio)
 const GRID_LIGHT = "#ECECEC"; // grid clarinho
-const BADGE_BG = "#0B2B6B";   // azul-escuro do badge de quantidade
+const BADGE_BG = "#0B2B6B"; // azul-escuro do badge de quantidade
 const BADGE_TEXT = "#FFFFFF";
 const TOTAL_COLOR = "#092357"; // azul-escuro do total no topo
 
 /* ========= Labels custom ========= */
-// Badge de quantidade centralizado no topo da pilha
 function QtdBadge({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
-  const w = 24, h = 16;
+  const w = 24,
+    h = 16;
   const cx = x + width / 2 - w / 2;
-  const cy = y - h - 2; // encosta no topo da pilha
+  const cy = y - h - 2;
   return (
     <g>
       <rect x={cx} y={cy} rx={3} ry={3} width={w} height={h} fill={BADGE_BG} />
@@ -92,12 +92,11 @@ function QtdBadge({ viewBox, value }) {
   );
 }
 
-// Total acima do badge (sem sobrepor)
 function TotalLabel({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
   const cx = x + width / 2;
-  const cy = y - 26; // sobe mais que o badge (h=16 + gap)
+  const cy = y - 26;
   return (
     <text
       x={cx}
@@ -113,7 +112,6 @@ function TotalLabel({ viewBox, value }) {
 }
 
 export default function PainelLogistica() {
-  // filtros legados (mantidos)
   const [dataInicio] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [dataFim] = useState(format(new Date(), "yyyy-MM"));
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
@@ -121,10 +119,30 @@ export default function PainelLogistica() {
   const { data: solicitacoes = [] } = useSolicitacoes();
 
   const statusColors = {
-    RECEBIDO: { bg: "bg-gradient-to-br from-gray-50 to-gray-100", dot: "bg-gray-500", text: "text-gray-700", icon: "text-gray-600" },
-    PROGRAMADO: { bg: "bg-gradient-to-br from-blue-50 to-blue-100", dot: "bg-blue-500", text: "text-blue-700", icon: "text-blue-600" },
-    "EM ROTA": { bg: "bg-gradient-to-br from-amber-50 to-amber-100", dot: "bg-amber-500", text: "text-amber-700", icon: "text-amber-600" },
-    CONCLUIDO: { bg: "bg-gradient-to-br from-green-50 to-green-100", dot: "bg-green-500", text: "text-green-700", icon: "text-green-600" },
+    RECEBIDO: {
+      bg: "bg-gradient-to-br from-gray-50 to-gray-100",
+      dot: "bg-gray-500",
+      text: "text-gray-700",
+      icon: "text-gray-600",
+    },
+    PROGRAMADO: {
+      bg: "bg-gradient-to-br from-blue-50 to-blue-100",
+      dot: "bg-blue-500",
+      text: "text-blue-700",
+      icon: "text-blue-600",
+    },
+    "EM ROTA": {
+      bg: "bg-gradient-to-br from-amber-50 to-amber-100",
+      dot: "bg-amber-500",
+      text: "text-amber-700",
+      icon: "text-amber-600",
+    },
+    CONCLUIDO: {
+      bg: "bg-gradient-to-br from-green-50 to-green-100",
+      dot: "bg-green-500",
+      text: "text-green-700",
+      icon: "text-green-600",
+    },
   };
 
   /* ========= Cards: contadores ========= */
@@ -142,22 +160,43 @@ export default function PainelLogistica() {
   const recebidos = useMemo(
     () =>
       solicitacoes
-        .filter((s) => s._status_base === "RECEBIDO" && !s._status_up?.includes("(D)"))
-        .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
+        .filter(
+          (s) =>
+            s._status_base === "RECEBIDO" && !s._status_up?.includes("(D)")
+        )
+        .sort(
+          (a, b) =>
+            (a._previsao_date?.getTime() || 0) -
+            (b._previsao_date?.getTime() || 0)
+        ),
     [solicitacoes]
   );
   const programados = useMemo(
     () =>
       solicitacoes
-        .filter((s) => s._status_base === "PROGRAMADO" && !s._status_up?.includes("(D)"))
-        .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
+        .filter(
+          (s) =>
+            s._status_base === "PROGRAMADO" && !s._status_up?.includes("(D)")
+        )
+        .sort(
+          (a, b) =>
+            (a._previsao_date?.getTime() || 0) -
+            (b._previsao_date?.getTime() || 0)
+        ),
     [solicitacoes]
   );
   const emRota = useMemo(
     () =>
       solicitacoes
-        .filter((s) => s._status_base === "EM ROTA" && !s._status_up?.includes("(D)"))
-        .sort((a, b) => (a._previsao_date?.getTime() || 0) - (b._previsao_date?.getTime() || 0)),
+        .filter(
+          (s) =>
+            s._status_base === "EM ROTA" && !s._status_up?.includes("(D)")
+        )
+        .sort(
+          (a, b) =>
+            (a._previsao_date?.getTime() || 0) -
+            (b._previsao_date?.getTime() || 0)
+        ),
     [solicitacoes]
   );
 
@@ -174,7 +213,7 @@ export default function PainelLogistica() {
         : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
-      const cidade = canonCidade(s.custo_cidade); // "Custo por Filial"
+      const cidade = canonCidade(s.custo_cidade);
       if (!cidade) continue;
 
       const valorProp = Number(s.valor_prop || 0);
@@ -191,17 +230,27 @@ export default function PainelLogistica() {
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
       qtd: qtd[c] || 0,
-      zero: 0, // dummy para empilhar labels
+      zero: 0,
     }));
   }, [solicitacoes, mesRef]);
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      {/* Bloco dos FORMULÁRIOS */}
+      {/* Bloco dos FORMULÁRIOS (agora com logo no lugar do texto) */}
       <Card className="border border-blue-200 bg-blue-50">
         <CardContent className="py-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <p className="text-sm font-semibold text-blue-900">Formulários:</p>
+            {/* Logo pequena e redonda no lugar de "Formulários:" */}
+            <div className="flex items-center justify-start">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md bg-white">
+                <img
+                  src={logisticaLogo}
+                  alt="Logística MacPonta Agro"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
               <a
                 href={FORM_FRETE_MAQUINA}
@@ -210,7 +259,7 @@ export default function PainelLogistica() {
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-300 hover:bg-blue-100"
               >
                 <ExternalLink className="w-4 h-4" />
-                Solicitação de Frete (Máquina)
+                Forms: Solicitação de Frete MÁQUINAS
               </a>
               <a
                 href={FORM_FRETE_PECAS}
@@ -219,7 +268,7 @@ export default function PainelLogistica() {
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-300 hover:bg-blue-100"
               >
                 <ExternalLink className="w-4 h-4" />
-                Solicitação de Frete (Peças)
+                Forms: Solicitação de Frete PEÇAS/FRACIONADOS
               </a>
             </div>
           </div>
@@ -227,31 +276,97 @@ export default function PainelLogistica() {
       </Card>
 
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">MacPonta Agro • Painel Logística 2026</h1>
-        <p className="text-gray-600">Visão geral das operações de transporte solicitadas via Forms.</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          MacPonta Agro • Painel Logística 2026
+        </h1>
+        <p className="text-gray-600">
+          Visão geral das operações de transporte solicitadas via Forms.
+        </p>
       </div>
 
       {/* Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatusCard status="RECEBIDO" count={contagemStatus.RECEBIDO} icon={Clock} color={statusColors.RECEBIDO} />
-        <StatusCard status="PROGRAMADO" count={contagemStatus.PROGRAMADO} icon={Truck} color={statusColors.PROGRAMADO} />
-        <StatusCard status="EM ROTA" count={contagemStatus["EM ROTA"]} icon={Navigation} color={statusColors["EM ROTA"]} />
-        <StatusCard status="CONCLUÍDO" count={contagemStatus.CONCLUIDO} icon={CheckCircle} color={statusColors.CONCLUIDO} />
+        <StatusCard
+          status="RECEBIDO"
+          count={contagemStatus.RECEBIDO}
+          icon={Clock}
+          color={statusColors.RECEBIDO}
+        />
+        <StatusCard
+          status="PROGRAMADO"
+          count={contagemStatus.PROGRAMADO}
+          icon={Truck}
+          color={statusColors.PROGRAMADO}
+        />
+        <StatusCard
+          status="EM ROTA"
+          count={contagemStatus["EM ROTA"]}
+          icon={Navigation}
+          color={statusColors["EM ROTA"]}
+        />
+        <StatusCard
+          status="CONCLUÍDO"
+          count={contagemStatus.CONCLUIDO}
+          icon={CheckCircle}
+          color={statusColors.CONCLUIDO}
+        />
       </div>
 
       {/* Listas por status */}
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="border-none shadow-lg">
-          <CardHeader><CardTitle className="text-sm font-semibold text-gray-700">RECEBIDO</CardTitle></CardHeader>
-          <CardContent>{recebidos.length === 0 ? <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p> : recebidos.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)}</CardContent>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-gray-700">
+              RECEBIDO
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recebidos.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Nenhuma solicitação
+              </p>
+            ) : (
+              recebidos.map((sol) => (
+                <SolicitacaoCard key={sol.id} solicitacao={sol} />
+              ))
+            )}
+          </CardContent>
         </Card>
         <Card className="border-none shadow-lg">
-          <CardHeader><CardTitle className="text-sm font-semibold text-blue-700">PROGRAMADO</CardTitle></CardHeader>
-          <CardContent>{programados.length === 0 ? <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p> : programados.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)}</CardContent>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-blue-700">
+              PROGRAMADO
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {programados.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Nenhuma solicitação
+              </p>
+            ) : (
+              programados.map((sol) => (
+                <SolicitacaoCard key={sol.id} solicitacao={sol} />
+              ))
+            )}
+          </CardContent>
         </Card>
         <Card className="border-none shadow-lg">
-          <CardHeader><CardTitle className="text-sm font-semibold text-amber-700">EM ROTA</CardTitle></CardHeader>
-          <CardContent>{emRota.length === 0 ? <p className="text-sm text-gray-500 text-center py-4">Nenhuma solicitação</p> : emRota.map((sol) => <SolicitacaoCard key={sol.id} solicitacao={sol} />)}</CardContent>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-amber-700">
+              EM ROTA
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {emRota.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Nenhuma solicitação
+              </p>
+            ) : (
+              emRota.map((sol) => (
+                <SolicitacaoCard key={sol.id} solicitacao={sol} />
+              ))
+            )}
+          </CardContent>
         </Card>
       </div>
 
@@ -263,7 +378,8 @@ export default function PainelLogistica() {
               Custos (Status Concluídos)
             </CardTitle>
             <p className="text-gray-600">
-              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio (verde).
+              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e
+              Próprio (verde).
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -281,31 +397,46 @@ export default function PainelLogistica() {
           <ResponsiveContainer width="100%" height={380}>
             <BarChart
               data={dadosCidadesColuna}
-              margin={{ top: 48, right: 16, left: 0, bottom: 34 }} // mais espaço pro Total
+              margin={{ top: 48, right: 16, left: 0, bottom: 34 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_LIGHT} />
               <XAxis dataKey="cidade" angle={-15} textAnchor="end" height={50} />
               <YAxis
-                tickFormatter={(v) => `R$ ${Number(v).toLocaleString("pt-BR")}`}
-                tick={{ fontSize: 10 }}  // ~ “Excel 8”
+                tickFormatter={(v) =>
+                  `R$ ${Number(v).toLocaleString("pt-BR")}`
+                }
+                tick={{ fontSize: 10 }}
               />
               <Tooltip
                 formatter={(value, name) => {
-                  if (name === "Total") return [`R$ ${Number(value || 0).toLocaleString("pt-BR")}`, "Total"];
-                  if (name === "Terceiro") return [`R$ ${Number(value || 0).toLocaleString("pt-BR")}`, "Terceiro"];
-                  if (name === "Próprio") return [`R$ ${Number(value || 0).toLocaleString("pt-BR")}`, "Próprio"];
+                  if (name === "Total")
+                    return [
+                      `R$ ${Number(value || 0).toLocaleString("pt-BR")}`,
+                      "Total",
+                    ];
+                  if (name === "Terceiro")
+                    return [
+                      `R$ ${Number(value || 0).toLocaleString("pt-BR")}`,
+                      "Terceiro",
+                    ];
+                  if (name === "Próprio")
+                    return [
+                      `R$ ${Number(value || 0).toLocaleString("pt-BR")}`,
+                      "Próprio",
+                    ];
                   if (name === "Qtd") return [value, "Qtd"];
                   return [value, name];
                 }}
                 labelFormatter={(label) => `Cidade: ${label}`}
               />
 
-              {/* Terceiro (amarelo) e Próprio (verde) empilhados */}
               <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
                 <LabelList
                   dataKey="terc"
                   position="inside"
-                  formatter={(v) => (v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : "")}
+                  formatter={(v) =>
+                    v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : ""
+                  }
                   fill="#FFFFFF"
                   style={{ fontSize: 11, fontWeight: 700 }}
                 />
@@ -314,13 +445,14 @@ export default function PainelLogistica() {
                 <LabelList
                   dataKey="prop"
                   position="inside"
-                  formatter={(v) => (v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : "")}
+                  formatter={(v) =>
+                    v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : ""
+                  }
                   fill="#FFFFFF"
                   style={{ fontSize: 11, fontWeight: 700 }}
                 />
               </Bar>
 
-              {/* Barra dummy (altura zero) no MESMO stack para posicionar QTD e TOTAL */}
               <Bar dataKey="zero" stackId="v" fill="transparent">
                 <LabelList dataKey="qtd" content={<QtdBadge />} />
                 <LabelList dataKey="total" content={<TotalLabel />} />
