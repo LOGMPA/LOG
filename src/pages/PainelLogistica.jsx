@@ -32,6 +32,7 @@ const parseBR = (s) => {
   const d = new Date(s);
   return isNaN(d) ? null : d;
 };
+
 const monthKeyLocal = (dLike) => {
   const d = dLike instanceof Date ? dLike : parseBR(dLike);
   if (!d) return "";
@@ -56,6 +57,7 @@ const CIDADES = [
   "GUARAPUAVA",
   "QUEDAS DO IGUAÇU",
 ];
+
 const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
@@ -68,13 +70,14 @@ const BADGE_TEXT = "#FFFFFF";
 const TOTAL_COLOR = "#092357"; // azul-escuro do total no topo
 
 /* ========= Labels custom ========= */
+// Badge de quantidade centralizado no topo da pilha
 function QtdBadge({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
-  const w = 24,
-    h = 16;
+  const w = 24;
+  const h = 16;
   const cx = x + width / 2 - w / 2;
-  const cy = y - h - 2;
+  const cy = y - h - 2; // encosta no topo da pilha
   return (
     <g>
       <rect x={cx} y={cy} rx={3} ry={3} width={w} height={h} fill={BADGE_BG} />
@@ -92,11 +95,12 @@ function QtdBadge({ viewBox, value }) {
   );
 }
 
+// Total acima do badge (sem sobrepor)
 function TotalLabel({ viewBox, value }) {
   if (value == null || !viewBox) return null;
   const { x, y, width } = viewBox;
   const cx = x + width / 2;
-  const cy = y - 26;
+  const cy = y - 26; // sobe mais que o badge (h=16 + gap)
   return (
     <text
       x={cx}
@@ -112,6 +116,7 @@ function TotalLabel({ viewBox, value }) {
 }
 
 export default function PainelLogistica() {
+  // filtros legados (mantidos se precisar no futuro)
   const [dataInicio] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [dataFim] = useState(format(new Date(), "yyyy-MM"));
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
@@ -171,6 +176,7 @@ export default function PainelLogistica() {
         ),
     [solicitacoes]
   );
+
   const programados = useMemo(
     () =>
       solicitacoes
@@ -185,12 +191,12 @@ export default function PainelLogistica() {
         ),
     [solicitacoes]
   );
+
   const emRota = useMemo(
     () =>
       solicitacoes
         .filter(
-          (s) =>
-            s._status_base === "EM ROTA" && !s._status_up?.includes("(D)")
+          (s) => s._status_base === "EM ROTA" && !s._status_up?.includes("(D)")
         )
         .sort(
           (a, b) =>
@@ -208,12 +214,13 @@ export default function PainelLogistica() {
 
     for (const s of solicitacoes) {
       if (!s._status_up?.includes("CONCL")) continue;
+
       const kMes = s._previsao_date
         ? monthKeyLocal(s._previsao_date)
         : monthKeyLocal(s.previsao_br || s.previsao);
       if (kMes !== mesRef) continue;
 
-      const cidade = canonCidade(s.custo_cidade);
+      const cidade = canonCidade(s.custo_cidade); // "Custo por Filial"
       if (!cidade) continue;
 
       const valorProp = Number(s.valor_prop || 0);
@@ -230,33 +237,53 @@ export default function PainelLogistica() {
       terc: somaTerc[c] || 0,
       total: (somaProp[c] || 0) + (somaTerc[c] || 0),
       qtd: qtd[c] || 0,
-      zero: 0,
+      zero: 0, // dummy para empilhar labels
     }));
   }, [solicitacoes, mesRef]);
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      {/* Bloco dos FORMULÁRIOS (agora com logo no lugar do texto) */}
-      <Card className="border border-blue-200 bg-blue-50">
-        <CardContent className="py-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            {/* Logo pequena e redonda no lugar de "Formulários:" */}
-            <div className="flex items-center justify-start">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-white">
+      {/* Banner de formulários inspirado no ícone */}
+      <Card className="border-none shadow-lg overflow-hidden">
+        <CardContent className="p-0">
+          <div
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-5 py-4"
+            style={{
+              background:
+                "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
+            }}
+          >
+            {/* Lado esquerdo: logo + texto */}
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-white">
                 <img
                   src={logisticaLogo}
                   alt="Logística MacPonta Agro"
                   className="w-full h-full object-cover"
                 />
               </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold tracking-wide text-emerald-100 uppercase">
+                  Logística · Sistema 2026
+                </span>
+                <span className="text-sm md:text-base font-semibold text-slate-900">
+                  Formulários de Solicitação de Frete
+                </span>
+                <span className="text-xs text-slate-800/80">
+                  Registre aqui os pedidos de MÁQUINAS e PEÇAS/FRACIONADOS.
+                </span>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            {/* Lado direito: botões dos Forms */}
+            <div className="flex flex-wrap gap-2 justify-start md:justify-end">
               <a
                 href={FORM_FRETE_MAQUINA}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-300 hover:bg-blue-100"
+                className="inline-flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-semibold
+                           rounded-lg bg-white/95 text-emerald-800 border border-emerald-300
+                           hover:bg-emerald-50 transition"
               >
                 <ExternalLink className="w-4 h-4" />
                 Forms: Solicitação de Frete MÁQUINAS
@@ -265,7 +292,9 @@ export default function PainelLogistica() {
                 href={FORM_FRETE_PECAS}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-300 hover:bg-blue-100"
+                className="inline-flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-semibold
+                           rounded-lg bg-white/95 text-emerald-800 border border-emerald-300
+                           hover:bg-emerald-50 transition"
               >
                 <ExternalLink className="w-4 h-4" />
                 Forms: Solicitação de Frete PEÇAS/FRACIONADOS
@@ -284,7 +313,7 @@ export default function PainelLogistica() {
         </p>
       </div>
 
-      {/* Cards */}
+      {/* Cards de status */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatusCard
           status="RECEBIDO"
@@ -332,6 +361,7 @@ export default function PainelLogistica() {
             )}
           </CardContent>
         </Card>
+
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-blue-700">
@@ -350,6 +380,7 @@ export default function PainelLogistica() {
             )}
           </CardContent>
         </Card>
+
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-amber-700">
@@ -378,8 +409,7 @@ export default function PainelLogistica() {
               Custos (Status Concluídos)
             </CardTitle>
             <p className="text-gray-600">
-              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e
-              Próprio (verde).
+              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio (verde).
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -430,6 +460,7 @@ export default function PainelLogistica() {
                 labelFormatter={(label) => `Cidade: ${label}`}
               />
 
+              {/* Terceiro (amarelo) e Próprio (verde) empilhados */}
               <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
                 <LabelList
                   dataKey="terc"
@@ -453,6 +484,7 @@ export default function PainelLogistica() {
                 />
               </Bar>
 
+              {/* Barra dummy (altura zero) no MESMO stack para posicionar QTD e TOTAL */}
               <Bar dataKey="zero" stackId="v" fill="transparent">
                 <LabelList dataKey="qtd" content={<QtdBadge />} />
                 <LabelList dataKey="total" content={<TotalLabel />} />
