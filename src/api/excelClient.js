@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 
 // URL PÚBLICA do BASE.xlsx (espelhado pelo Power Automate)
 const EXCEL_URL =
-  "https://1drv.ms/x/c/4b504997c31a5c11/EePSIm4WTQZIivVHJe986k0BTZe_W-1ddMjAwvRXlFwOlg?download=1";
+  "https://1drv.ms/x/c/4b504997c31a5c11/EePSIm4WTQZIivVHJe986k0BTZe_W-1ddMjAwvRXlFwOlg?e=yJ8md3";
 
 // Nome exato da guia que vamos usar dentro do BASE.xlsx
 const SHEET_NAME = "FRETE MÁQUINAS";
