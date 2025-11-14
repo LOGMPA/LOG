@@ -1,9 +1,9 @@
 // src/api/excelClient.js
 import * as XLSX from "xlsx";
 
-/* ---------------- CONFIG: BASE.xlsx NO ONEDRIVE ---------------- */
+/* ---------------- CONFIG: BASE.xlsx ---------------- */
 
-// URL PÚBLICA do BASE.xlsx (espelhado pelo Power Automate)
+// Arquivo BASE.xlsx servido pelo próprio GitHub Pages
 const EXCEL_URL =
   "https://logmpa.github.io/LOG/data/BASE.xlsx";
 
@@ -72,6 +72,8 @@ function parseBRDate(val) {
   if (val instanceof Date && !isNaN(val)) return val;
 
   const s = String(val).trim();
+
+  // formato dd/mm/yyyy
   const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (m) {
     const [, dd, mm, yyyy] = m;
@@ -79,6 +81,7 @@ function parseBRDate(val) {
     return isNaN(d) ? null : d;
   }
 
+  // deixa o JS tentar
   const d2 = new Date(s);
   return isNaN(d2) ? null : d2;
 }
@@ -110,6 +113,7 @@ const CIDADES_DISPLAY = [
   "GUARAPUAVA",
   "QUEDAS DO IGUAÇU",
 ];
+
 const CIDADES_MAP = new Map(
   CIDADES_DISPLAY.map((lbl) => [normalizar(lbl), lbl])
 );
@@ -140,7 +144,7 @@ function normalizeRow(row, idx) {
     }
   }
 
-  // DATA: SEMPRE PREV (REAL ignorado pra painel, mas mantido br/keys)
+  // DATA: SEMPRE PREV (REAL ignorado pro painel, mas mantido br/keys)
   const dPrev = parseBRDate(o.previsao_raw);
   const dReal = parseBRDate(o.real_raw);
 
@@ -180,10 +184,14 @@ function normalizeRow(row, idx) {
     !estaEmRaw || o.origem_mpa || !estaEmRaw.startsWith("http")
       ? null
       : estaEmRaw;
+
   o.destino_link =
     !vaiParaRaw || o.destino_mpa || !vaiParaRaw.startsWith("http")
       ? null
       : vaiParaRaw;
+
+  // se quiser usar em card, pode usar o destino_link ou origem_link
+  // mas hoje o restante do app nem depende disso
 
   // transferência entre filiais = MPA/MPA
   o.is_transferencia = o.origem_mpa && o.destino_mpa;
@@ -191,10 +199,13 @@ function normalizeRow(row, idx) {
   // ID estável
   o.id = idx + 1;
 
+  // alias simples usados em várias telas
+  o.previsao = o.previsao_br;
+
   return o;
 }
 
-/* ---------------- loader público: agora via BASE.xlsx no OneDrive ---------------- */
+/* ---------------- loader público: lê BASE.xlsx servido no GitHub ---------------- */
 
 export async function loadSolicitacoesFromExcel() {
   const url = EXCEL_URL;
@@ -202,7 +213,7 @@ export async function loadSolicitacoesFromExcel() {
 
   const resp = await fetch(url, { cache: "no-store" });
   if (!resp.ok) {
-    const msg = `Falha ao buscar ${url} (HTTP ${resp.status}). Verifique se o link público do BASE.xlsx está correto.`;
+    const msg = `Falha ao buscar ${url} (HTTP ${resp.status}). Verifique se o link do BASE.xlsx está correto.`;
     console.error("[solicitacoes]", msg);
     throw new Error(msg);
   }
@@ -222,7 +233,11 @@ export async function loadSolicitacoesFromExcel() {
   const out = rows
     .map((row, i) => normalizeRow(row, i))
     // filtra o lixo 100% vazio
-    .filter((r) => normalizar(r.status) || (r.chassi_lista && r.chassi_lista.length));
+    .filter(
+      (r) =>
+        normalizar(r.status) ||
+        (r.chassi_lista && r.chassi_lista.length)
+    );
 
   if (!out.length) {
     console.warn(
