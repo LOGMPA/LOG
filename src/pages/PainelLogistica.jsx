@@ -62,12 +62,12 @@ const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
 /* ========= Cores ========= */
-const COR_TERC = "#F2B300"; // amarelo mais escuro (Terceiro)
-const COR_PROP = "#1B5E20"; // verde escuro (Próprio)
-const GRID_LIGHT = "#ECECEC"; // grid clarinho
-const BADGE_BG = "#0B2B6B"; // azul-escuro do badge de quantidade
+const COR_TERC = "#F2B300"; // Terceiro
+const COR_PROP = "#1B5E20"; // Próprio
+const GRID_LIGHT = "#ECECEC";
+const BADGE_BG = "#0B2B6B";
 const BADGE_TEXT = "#FFFFFF";
-const TOTAL_COLOR = "#092357"; // azul-escuro do total no topo
+const TOTAL_COLOR = "#092357";
 
 /* ========= Labels custom ========= */
 function QtdBadge({ viewBox, value }) {
@@ -257,33 +257,36 @@ export default function PainelLogistica() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-base md:text-lg font-bold text-white">
+                <span className="text-lg md:text-2xl font-extrabold text-white">
                   MacPonta Agro • Painel Logística 2026
                 </span>
-                <span className="text-sm md:text-base font-semibold text-emerald-100">
+                <span className="text-base md:text-lg font-semibold text-emerald-100">
                   Visão geral das operações de transporte solicitadas via Forms.
+                </span>
+                <span className="text-xs text-slate-800/80">
+                  Registre aqui os pedidos de MÁQUINAS e PEÇAS/FRACIONADOS.
                 </span>
               </div>
             </div>
 
-            {/* Lado direito: botões dos Forms */}
-            <div className="flex flex-wrap gap-2 justify-start md:justify-end">
+            {/* Lado direito: botões dos Forms (mesma largura) */}
+            <div className="flex flex-col gap-2 w-full md:w-80 justify-start md:items-end">
               <a
                 href={FORM_FRETE_MAQUINA}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold
+                className="inline-flex w-full justify-center items-center gap-2 px-3 py-2 text-xs font-semibold
                            rounded-lg bg-white/95 text-emerald-800 border border-emerald-300
                            hover:bg-emerald-50 transition"
               >
-                <ExternalLink className="w-5 h-5" />
+                <ExternalLink className="w-4 h-4" />
                 Forms: Solicitação de Frete MÁQUINAS
               </a>
               <a
                 href={FORM_FRETE_PECAS}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold
+                className="inline-flex w-full justify-center items-center gap-2 px-3 py-2 text-xs font-semibold
                            rounded-lg bg-white/95 text-emerald-800 border border-emerald-300
                            hover:bg-emerald-50 transition"
               >
