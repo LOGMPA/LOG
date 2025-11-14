@@ -99,18 +99,18 @@ export default function TransportesConcluidos() {
   }, [solicitacoes, filtros]);
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
+    <div className="p-6 md:p-8 space-y-4">
       {/* Banner/cabeçalho no estilo do resto do sistema */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
-            className="px-5 py-3"
+            className="px-4 py-2"
             style={{
               background:
                 "linear-gradient(90deg, #14532D 0%, #86EFAC 35%, #FDE68A 75%, #F9FAFB 100%)",
             }}
           >
-            <div className="w-full max-w-2xl bg-white/95 rounded-2xl shadow-md px-3 py-2 flex items-center gap-3">
+            <div className="w-full max-w-2xl bg-white/95 rounded-xl shadow-md px-3 py-2 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
                 <CheckCircle className="w-5 h-5 text-emerald-600" />
               </div>
@@ -130,8 +130,8 @@ export default function TransportesConcluidos() {
       {/* Filtros (mesmo componente e tamanho dos outros) */}
       <Card className="border-none shadow-md overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-4 py-2 bg-gradient-to-r from-emerald-50 via-emerald-50 to-white">
-            <div className="bg-white rounded-xl shadow-sm px-3 py-2 md:px-4 md:py-3">
+          <div className="px-3 py-1.5 bg-gradient-to-r from-emerald-50 via-emerald-50 to-white">
+            <div className="bg-white rounded-lg shadow-sm px-3 py-2 md:px-4 md:py-2">
               <FiltrosTransporte
                 filtros={filtros}
                 onFiltrosChange={setFiltros}
