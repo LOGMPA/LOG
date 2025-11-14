@@ -39,11 +39,12 @@ function statusClass(s){
   if(s.includes("CONCLU")) return "ok"
   if(s.includes("ROTA") || s.includes("TRÂNSITO") || s.includes("TRANSITO")) return "warn"
   if(s.includes("PROGRAM")) return "warn"
+  if(s.includes("SUSPENSO")) return "warn"
   return "bad"
 }
 
 export function useLogisticaBase(refreshMs = 60000){
-  const [rows, setRows] = useState([])   // linhas prontas pra tabela
+  const [rows, setRows] = useState([])   // linhas prontas pra tabela / cards / gráficos
   const [kpis, setKpis] = useState({
     total: 0,
     prog:  0,
@@ -83,41 +84,100 @@ export function useLogisticaBase(refreshMs = 60000){
         if(cancelled) return
         if(!raw.length) throw new Error("Nenhuma linha na guia FRETE MÁQUINAS")
 
-        // Filtra linhas totalmente vazias
-        const filtradas = raw.filter(r => {
-          const st = norm(r["STATUS"])
-          const ch = norm(r["CHASSI"])
-          return st || ch
-        })
+        // Normalizar cada linha
+        const normRows = raw
+          .filter(r => {
+            const st = norm(r["STATUS"])
+            const ch = norm(r["CHASSI"])
+            return st || ch
+          })
+          .map(r => {
+            const status = norm(r["STATUS"])
+            const frete  = norm(r["FRETE"])
+            const hr     = Number(r["HR"] ?? "") || 0
+            const km     = Number(r["KM"] ?? "") || 0
+            const prop   = Number(String(r["R$ PROP"]).replace(".","").replace(",",".")) || 0
+            const terc   = Number(String(r["R$ TERC"]).replace(".","").replace(",",".")) || 0
 
-        // Normaliza pra estrutura que o painel vai usar
-        const normRows = filtradas.map(r => {
-          // data: prioriza REAL, senão PREV
-          const dataBruta = r["REAL"] || r["PREV"]
-          return {
-            data:   fmtDate(dataBruta),
-            chassi: norm(r["CHASSI"]),
-            cliente:norm(r["CLIENTE/NOTA"]),
-            status: norm(r["STATUS"]),
-            de:     norm(r["ESTÁ EM:"] || r["ESTÁ:"]),
-            para:   norm(r["VAI PARA:"] || r["VAI:"]),
-            filial: norm(r["FILIAL CUSTOS"] || "")
-          }
-        })
+            const chassi = norm(r["CHASSI"])
+            const prev   = fmtDate(r["PREV"])     // PREV é a data principal
+            const cliente= norm(r["CLIENTE/NOTA"])
+            const solicitante = norm(r["SOLICITANTE"])
 
-        // Ordena por data REAL/ PREV desc
+            const estaCidade = norm(r["ESTÁ:"])
+            const vaiCidade  = norm(r["VAI:"])
+
+            const estaEmRaw  = norm(r["ESTÁ EM:"])
+            const vaiParaRaw = norm(r["VAI PARA:"])
+
+            const tipo   = norm(r["TIPO"])
+            const obs    = norm(r["OBS"])
+            const filialCustos = norm(r["FILIAL CUSTOS"])
+
+            const origemLink =
+              estaEmRaw?.toUpperCase() === "MPA" || !estaEmRaw
+                ? null
+                : estaEmRaw
+
+            const destinoLink =
+              vaiParaRaw?.toUpperCase() === "MPA" || !vaiParaRaw
+                ? null
+                : vaiParaRaw
+
+            const origemMp   = estaEmRaw?.toUpperCase() === "MPA"
+            const destinoMp  = vaiParaRaw?.toUpperCase() === "MPA"
+            const isTransfer = origemMp && destinoMp
+
+            const isDemo = status.toUpperCase().includes("(D)")
+
+            return {
+              // básicos
+              status,
+              frete,
+              hr,
+              km,
+              custoProp: prop,
+              custoTerc: terc,
+              chassi,
+              dataPrev: prev,
+              cliente,
+              solicitante,
+              tipo,
+              obs,
+              filialCustos,
+
+              // origem/destino "humanos"
+              origemCidade:  estaCidade || "-",
+              destinoCidade: vaiCidade  || "-",
+
+              // links (se existirem)
+              origemLink,    // null se vazio ou MPA
+              destinoLink,   // null se vazio ou MPA
+
+              // flags pra layout / filtros
+              origemMp,
+              destinoMp,
+              isTransferencia: isTransfer,
+              isDemo
+            }
+          })
+
+        // Ordena por dataPrev desc
         const sorted = [...normRows].sort((a,b) => {
-          const pa = a.data?.split("/").reverse().join("-") || ""
-          const pb = b.data?.split("/").reverse().join("-") || ""
+          const pa = a.dataPrev?.split("/").reverse().join("-") || ""
+          const pb = b.dataPrev?.split("/").reverse().join("-") || ""
           return (Date.parse(pb) || 0) - (Date.parse(pa) || 0)
         })
 
-        // KPIs
+        // KPIs (por enquanto considerando tudo, inclusive (D);
+        // depois dá pra filtrar se quiser demonstrativos fora)
         const total = sorted.length
-        const prog  = sorted.filter(r => r.status.toUpperCase().includes("PROGRAM")).length
+        const prog  = sorted.filter(r => r.status.toUpperCase().includes("PROGRAMADO")).length
         const rote  = sorted.filter(r => {
           const s = r.status.toUpperCase()
-          return s.includes("ROTA") || s.includes("TRÂNSITO") || s.includes("TRANSITO")
+          return s.includes("ROTA")
+              || s.includes("TRÂNSITO")
+              || s.includes("TRANSITO")
         }).length
         const nok   = sorted.filter(r => statusClass(r.status) === "bad").length
 
@@ -133,7 +193,7 @@ export function useLogisticaBase(refreshMs = 60000){
       }
     }
 
-    // carrega na montagem
+    // carrega ao montar
     load()
     // auto-refresh
     const id = setInterval(load, refreshMs)
