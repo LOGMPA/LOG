@@ -279,7 +279,7 @@ export default function PainelLogistica() {
                            rounded-lg bg-white/95 text-emerald-800 border border-emerald-300
                            hover:bg-emerald-50 transition"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-5 h-5" />
                 Forms: Solicitação de Frete MÁQUINAS
               </a>
               <a
