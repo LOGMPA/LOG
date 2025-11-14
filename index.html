@@ -1,14 +1,469 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Painel Logística 2026</title>
-    <meta name="color-scheme" content="light">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚜</text></svg>">
-  </head>
-  <body class="bg-[#FAFAF9]">
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel Logística 2026</title>
+  <meta name="color-scheme" content="dark light">
+  <style>
+    :root {
+      --bg:#05060a;
+      --card:#111217;
+      --ink:#f5f5f5;
+      --muted:#9aa0a6;
+      --ok:#4caf50;
+      --nok:#e53935;
+      --warn:#ffa000;
+      --accent:#4f46e5;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      margin:0;
+      min-height:100vh;
+      background:radial-gradient(circle at top,#111827 0,#020617 42%,#020617 100%);
+      color:var(--ink);
+      font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      padding:14px 16px;
+      border-bottom:1px solid #1f2937;
+      background:linear-gradient(180deg,#020617f0,#020617cc 60%,#02061700);
+      backdrop-filter:blur(6px);
+    }
+    .wrap{max-width:1120px;margin:0 auto;padding:0 4px;}
+    h1{font-size:18px;font-weight:650;display:flex;align-items:center;gap:8px;}
+    main{padding:16px 0 32px;}
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:16px;
+    }
+    @media (min-width:960px){
+      .grid{grid-template-columns:1.2fr 1fr;}
+    }
+    .card{
+      background:radial-gradient(circle at top,#111827,#020617);
+      border-radius:14px;
+      border:1px solid #1f2937;
+      padding:14px 14px 16px;
+      box-shadow:0 18px 45px rgba(0,0,0,.55);
+    }
+    .card h2{
+      font-size:15px;
+      margin-bottom:10px;
+      font-weight:600;
+    }
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+    label{font-size:12px;color:var(--muted);}
+    input[type="text"]{
+      background:#020617;
+      border-radius:10px;
+      border:1px solid #293548;
+      padding:9px 11px;
+      color:var(--ink);
+      min-width:260px;
+      outline:none;
+      font-size:13px;
+    }
+    input[type="text"]:focus{border-color:var(--accent);}
+    button{
+      border-radius:10px;
+      border:1px solid #374151;
+      background:#111827;
+      color:var(--ink);
+      padding:9px 13px;
+      font-size:13px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    button:hover{border-color:var(--accent);filter:brightness(1.05);}
+    .mini{font-size:12px;}
+    .muted{color:var(--muted);}
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid #27354c;
+      background:#020617;
+      font-size:11px;
+      color:#cbd5f5;
+    }
+    .kpi-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;}
+    .kpi{
+      flex:1 1 110px;
+      border-radius:12px;
+      background:#020617;
+      border:1px solid #1f2937;
+      padding:10px 11px;
+    }
+    .kpi h3{font-size:11px;color:var(--muted);margin-bottom:4px;}
+    .kpi .val{font-size:20px;font-weight:700;}
+    .kpi.ok .val{color:var(--ok);}
+    .kpi.warn .val{color:var(--warn);}
+    .kpi.bad .val{color:var(--nok);}
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0 7px;
+      font-size:13px;
+    }
+    th{
+      text-align:left;
+      color:var(--muted);
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      padding:0 8px 4px;
+    }
+    td{
+      background:#020617;
+      border-top:1px solid #111827;
+      border-bottom:1px solid #111827;
+      padding:8px 8px;
+      vertical-align:middle;
+    }
+    td:first-child{
+      border-left:1px solid #111827;
+      border-top-left-radius:9px;
+      border-bottom-left-radius:9px;
+    }
+    td:last-child{
+      border-right:1px solid #111827;
+      border-top-right-radius:9px;
+      border-bottom-right-radius:9px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid #1f2937;
+      background:#020617;
+      font-size:12px;
+    }
+    .status{font-weight:650;}
+    .status.ok{color:var(--ok);}
+    .status.warn{color:var(--warn);}
+    .status.bad{color:var(--nok);}
+    .error{
+      margin-top:10px;
+      padding:10px 11px;
+      border-radius:10px;
+      background:#2b1111;
+      border:1px solid #4a1717;
+      color:#fed7d7;
+      font-size:12px;
+      white-space:pre-wrap;
+    }
+    footer{
+      padding:14px 0 24px;
+      text-align:center;
+      color:var(--muted);
+      font-size:11px;
+    }
+    canvas{width:100%;max-height:280px;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap row" style="justify-content:space-between;gap:10px;">
+      <h1>🚜 Painel Logística 2026 <span style="font-size:12px;color:var(--muted);font-weight:400;">(BASE.xlsx espelhada)</span></h1>
+      <div class="row mini">
+        <span class="tag" id="data-source">Fonte: —</span>
+        <span class="tag" id="last-sync">Última atualização: —</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <!-- CONFIG -->
+      <section class="card">
+        <h2>Configuração da base</h2>
+        <div class="row" style="margin-bottom:8px;">
+          <label for="url">URL pública do arquivo <strong>.xlsx</strong> ou <strong>.csv</strong></label>
+        </div>
+        <div class="row" style="margin-bottom:8px;">
+          <input id="url" type="text" placeholder="Cole aqui o link público do BASE.xlsx" />
+          <button id="load">🔄 Carregar</button>
+          <button id="refresh">⟳ Atualizar</button>
+        </div>
+        <div class="row mini">
+          <label><input type="checkbox" id="auto" /> Auto-refresh a cada 60s</label>
+        </div>
+        <p class="mini muted" style="margin-top:8px;">
+          Use aqui o link público do <strong>BASE.xlsx</strong> no seu OneDrive pessoal
+          (<code>https://1drv.ms/...</code>). O arquivo será lido direto no navegador.
+        </p>
+        <div id="err" class="error" style="display:none;"></div>
+      </section>
+
+      <!-- KPI + CHART -->
+      <section class="card">
+        <h2>Resumo rápido</h2>
+        <div class="kpi-wrap">
+          <div class="kpi">
+            <h3>Total de registros</h3>
+            <div class="val" id="k-total">0</div>
+          </div>
+          <div class="kpi warn">
+            <h3>Programado</h3>
+            <div class="val" id="k-prog">0</div>
+          </div>
+          <div class="kpi warn">
+            <h3>Em rota / trânsito</h3>
+            <div class="val" id="k-rote">0</div>
+          </div>
+          <div class="kpi bad">
+            <h3>Pendentes / NOK</h3>
+            <div class="val" id="k-nok">0</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <canvas id="chart"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- TABLE -->
+    <section class="card" style="margin-top:16px;">
+      <h2>Últimas atualizações</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Chassi</th>
+            <th>Cliente</th>
+            <th>Status</th>
+            <th>Origem → Destino</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <p class="mini muted" style="margin-top:6px;">
+        Campos esperados (ou equivalentes) no cabeçalho: <strong>DATA</strong>,
+        <strong>CHASSI</strong>, <strong>CLIENTE</strong>, <strong>STATUS</strong>,
+        <strong>DE</strong>, <strong>PARA</strong>. O painel tenta adivinhar nomes parecidos.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    Painel estático sem backend. A base vem do <strong>BASE.xlsx</strong> espelhado a partir do LOGÍSTICA 2026 v1.
+  </footer>
+
+  <!-- SheetJS e Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const state = { rows: [], chart: null, url: "", auto: false, timer: null };
+
+    const HEAD_MAP = {
+      data:   ["data","dt","data registro","dt prev","prev","previsão"],
+      chassi: ["chassi","chassi/serie","chasis","série","serie"],
+      cliente:["cliente","cliente/nota","cliente/nota fiscal","destinatario","destinatário"],
+      status: ["status","situação","situacao","andamento","etapa"],
+      de:     ["de","origem","está em"],
+      para:   ["para","vai para","destino"]
+    };
+
+    const norm = v => String(v ?? "").trim();
+
+    function guessHead(keysRaw){
+      const keys = keysRaw.map(k => String(k).toLowerCase().trim());
+      const res = {};
+      for(const k of Object.keys(HEAD_MAP)){
+        const opts = HEAD_MAP[k];
+        let hit = null;
+        for(let i=0;i<keys.length;i++){
+          if(opts.includes(keys[i])){ hit = keysRaw[i]; break; }
+        }
+        res[k] = hit;
+      }
+      // fallback tosco
+      res.data   = res.data   || keysRaw.find(k => String(k).toLowerCase().includes("data"))   || keysRaw[0];
+      res.status = res.status || keysRaw.find(k => String(k).toLowerCase().includes("status")) || keysRaw[1];
+      res.chassi = res.chassi || keysRaw.find(k => String(k).toLowerCase().includes("chas"))   || keysRaw[2];
+      res.cliente= res.cliente|| keysRaw.find(k => String(k).toLowerCase().includes("client")) || keysRaw[3];
+      res.de     = res.de     || keysRaw.find(k => String(k).toLowerCase().includes("orig"))   || keysRaw[4];
+      res.para   = res.para   || keysRaw.find(k => String(k).toLowerCase().includes("dest"))   || keysRaw[5];
+      return res;
+    }
+
+    function fmtDate(v){
+      if(v instanceof Date) return v.toLocaleDateString("pt-BR");
+      const s = String(v ?? "").trim();
+      if(!s) return "";
+      if(/^\d{4}-\d{2}-\d{2}/.test(s)){
+        const d = new Date(s);
+        if(!isNaN(d)) return d.toLocaleDateString("pt-BR");
+      }
+      if(/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) return s;
+      const n = Number(s);
+      if(!isNaN(n) && n>25569 && n<60000){
+        const dd = XLSX.SSF.parse_date_code(n);
+        if(dd) return new Date(Date.UTC(dd.y,dd.m-1,dd.d)).toLocaleDateString("pt-BR");
+      }
+      return s;
+    }
+
+    function statusClass(s){
+      s = norm(s).toUpperCase();
+      if(s.includes("CONCLU")) return "ok";
+      if(s.includes("ROTA") || s.includes("TRÂNSITO") || s.includes("TRANSITO")) return "warn";
+      if(s.includes("PROGRAM")) return "warn";
+      return "bad";
+    }
+
+    function drawTable(rows, head){
+      const tbody = $("#tbody");
+      tbody.innerHTML = "";
+      const get = (r,k)=> norm(r[head[k]]);
+      const enriched = rows.map(r => {
+        const ds = fmtDate(r[head.data]);
+        let key = 0;
+        if(ds && /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(ds)){
+          const [d,m,y] = ds.split("/").map(Number);
+          key = Date.UTC(y<100?2000+y:y, m-1, d);
+        }
+        return { raw:r, key };
+      }).sort((a,b)=>b.key-a.key).map(x=>x.raw);
+
+      for(const r of enriched.slice(0,150)){
+        const d = fmtDate(r[head.data]);
+        const ch = get(r,"chassi") || "—";
+        const cl = get(r,"cliente") || "—";
+        const st = get(r,"status") || "—";
+        const de = get(r,"de") || "—";
+        const pa = get(r,"para") || "—";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${d||"—"}</td>
+          <td><span class="pill">${ch}</span></td>
+          <td>${cl}</td>
+          <td class="status ${statusClass(st)}">${st}</td>
+          <td>${de} → ${pa}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function drawKpis(rows, head){
+      const get = (r,k)=> norm(r[head[k]]);
+      const total = rows.length;
+      const prog = rows.filter(r => get(r,"status").toUpperCase().includes("PROGRAM")).length;
+      const rote = rows.filter(r => {
+        const s = get(r,"status").toUpperCase();
+        return s.includes("ROTA") || s.includes("TRÂNSITO") || s.includes("TRANSITO");
+      }).length;
+      const nok = rows.filter(r => statusClass(get(r,"status")) === "bad").length;
+
+      $("#k-total").textContent = total;
+      $("#k-prog").textContent  = prog;
+      $("#k-rote").textContent  = rote;
+      $("#k-nok").textContent   = nok;
+    }
+
+    function drawChart(rows, head){
+      const labels = ["CONCLUÍDO","EM ROTA","PROGRAMADO","PENDENTE"];
+      const counts = { "CONCLUÍDO":0, "EM ROTA":0, "PROGRAMADO":0, "PENDENTE":0 };
+      for(const r of rows){
+        const s = norm(r[head.status]).toUpperCase();
+        if(s.includes("CONCLU")) counts["CONCLUÍDO"]++;
+        else if(s.includes("ROTA") || s.includes("TRÂNSITO") || s.includes("TRANSITO")) counts["EM ROTA"]++;
+        else if(s.includes("PROGRAM")) counts["PROGRAMADO"]++;
+        else counts["PENDENTE"]++;
+      }
+      const data = labels.map(l => counts[l]);
+      const ctx = document.getElementById("chart");
+      if(state.chart) state.chart.destroy();
+      state.chart = new Chart(ctx, {
+        type:"bar",
+        data:{ labels, datasets:[{ label:"Qtd", data }]},
+        options:{
+          responsive:true,
+          plugins:{ legend:{ display:false }},
+          scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+        }
+      });
+    }
+
+    async function fetchXlsx(url){
+      const res = await fetch(url,{cache:"no-store"});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const buf = await res.arrayBuffer();
+      const wb = XLSX.read(buf,{type:"array"});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      return XLSX.utils.sheet_to_json(ws,{defval:""});
+    }
+
+    async function fetchCsv(url){
+      const res = await fetch(url,{cache:"no-store"});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const text = await res.text();
+      const wb = XLSX.read(text,{type:"string"});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      return XLSX.utils.sheet_to_json(ws,{defval:""});
+    }
+
+    async function load(url){
+      $("#err").style.display = "none";
+      $("#err").textContent = "";
+      $("#data-source").textContent = "Fonte: " + (url.length>55? url.slice(0,55)+"…" : url);
+      try{
+        const lower = url.toLowerCase();
+        let rows;
+        if(lower.endsWith(".csv") || lower.includes("format=csv")){
+          rows = await fetchCsv(url);
+        }else{
+          rows = await fetchXlsx(url);
+        }
+        if(!rows.length) throw new Error("Nenhuma linha lida do arquivo.");
+        const keys = Object.keys(rows[0]);
+        const head = guessHead(keys);
+        state.rows = rows;
+        drawTable(rows, head);
+        drawKpis(rows, head);
+        drawChart(rows, head);
+        $("#last-sync").textContent = "Última atualização: " + new Date().toLocaleString("pt-BR");
+      }catch(e){
+        $("#err").style.display = "block";
+        $("#err").textContent = "Erro ao carregar: " + e.message +
+          "\n\nPossíveis causas:\n- Link não é público\n- Bloqueio de CORS\n- Arquivo apagado/movido.";
+      }
+    }
+
+    $("#load").addEventListener("click", () => {
+      const u = $("#url").value.trim();
+      if(!u) return;
+      state.url = u;
+      load(u);
+    });
+
+    $("#refresh").addEventListener("click", () => {
+      if(state.url) load(state.url);
+    });
+
+    $("#auto").addEventListener("change",(e)=>{
+      state.auto = e.target.checked;
+      clearInterval(state.timer);
+      if(state.auto && state.url){
+        state.timer = setInterval(()=>load(state.url),60000);
+      }
+    });
+
+    // Se quiser deixar o link fixo aqui, descomenta a linha abaixo
+     $("#url").value = "https://1drv.ms/x/c/4b504997c31a5c11/EePSIm4WTQZIivVHJe986k0BTZe_W-1ddMjAwvRXlFwOlg?e=A2rTYB";
+  </script>
+</body>
 </html>
