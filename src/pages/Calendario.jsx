@@ -104,23 +104,23 @@ export default function Calendario() {
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      {/* Banner do Calendário - mesmo "clima" do painel */}
+      {/* Banner do Calendário - mesmo "clima" do painel, mais compacto */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
-            className="px-5 py-4"
+            className="px-5 py-3"
             style={{
               background:
                 "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
             }}
           >
             {/* Retângulo branco interno com ícone e textos */}
-            <div className="max-w-xl bg-white/95 rounded-2xl shadow-md px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-                <CalendarIcon className="w-6 h-6 text-blue-600" />
+            <div className="max-w-xl bg-white/95 rounded-2xl shadow-md px-3 py-2 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+                <CalendarIcon className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base md:text-lg font-extrabold text-slate-900">
+                <span className="text-lg md:text-2xl font-extrabold text-slate-900">
                   Calendário de Transportes
                 </span>
                 <span className="text-sm md:text-base text-slate-600">
@@ -229,7 +229,11 @@ export default function Calendario() {
             {["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"].map((lab) => (
               <div
                 key={lab}
-                className="text-center text-xs font-semibold text-gray-600 py-2"
+                className="text-center text-xs font-semibold text-amber-900 py-2 rounded-md"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #FDBA74 0%, #FDE68A 100%)",
+                }}
               >
                 {lab}
               </div>
