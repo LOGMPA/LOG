@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useSolicitacoes } from "../hooks/useSolicitacoes";
+import { useSolicitacoes } from "../hooks/useLogisticaBase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle, MapPin } from "lucide-react";
