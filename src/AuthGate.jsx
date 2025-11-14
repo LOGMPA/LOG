@@ -103,7 +103,7 @@ export default function AuthGate({ children }) {
           </form>
 
           <p className="mt-4 text-center text-xs text-slate-400">
-            Logística 2026.
+            Logística 2026. Criado por Marcela Caroline Marques.
           </p>
         </div>
       </div>
