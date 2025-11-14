@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { Badge } from "../components/ui/badge";
 import FiltrosTransporte from "../components/logistica/FiltrosTransporte";
 import { Card, CardContent } from "../components/ui/card";
 
@@ -48,47 +47,40 @@ export default function SolicitacoesTransporte() {
 
   const { data: solicitacoes = [], isLoading } = useSolicitacoes();
 
-  // status permitido: RECEBIDO / PROGRAMADO / EM ROTA / SUSPENSO (com ou sem "(D)")
   const allowed = new Set(["RECEBIDO", "PROGRAMADO", "EM ROTA", "SUSPENSO"]);
 
   const solicitacoesFiltradas = useMemo(() => {
     const out = solicitacoes.filter((s) => {
-      // excluir concluídos (com ou sem D)
       if (s._status_base === "CONCLUIDO") return false;
-
-      // manter apenas os statuses liberados
       if (!allowed.has(s._status_base)) return false;
 
-      // filtro de chassi
       if (
         filtros.chassi &&
         !s.chassi_lista?.some((c) =>
           c.toLowerCase().includes(filtros.chassi.toLowerCase())
         )
-      ) {
+      )
         return false;
-      }
-      // filtro de cliente (nota)
+
       if (
         filtros.cliente &&
         !String(s.nota || "")
           .toLowerCase()
           .includes(filtros.cliente.toLowerCase())
-      ) {
+      )
         return false;
-      }
-      // filtro de solicitante
+
       if (
         filtros.solicitante &&
         !String(s.solicitante || "")
           .toLowerCase()
           .includes(filtros.solicitante.toLowerCase())
-      ) {
+      )
         return false;
-      }
-      // filtro de datas por PREV
+
       const d = s._previsao_date ? new Date(s._previsao_date) : null;
       if (!d) return false;
+
       if (filtros.dataInicio) {
         const di = new Date(filtros.dataInicio);
         if (d < di) return false;
@@ -97,14 +89,15 @@ export default function SolicitacoesTransporte() {
         const df = new Date(filtros.dataFim);
         if (d > df) return false;
       }
-      // filtro de status específico
+
       if (filtros.status !== "all") {
         if (String(s.status) !== filtros.status) return false;
       }
+
       return true;
     });
 
-    // ordena: mais antigo -> mais novo, mas SUSPENSO sempre por último
+    // ordena: mais antigo -> mais novo, SUSPENSO por último
     out.sort((a, b) => {
       const aSusp = a._status_base === "SUSPENSO" ? 1 : 0;
       const bSusp = b._status_base === "SUSPENSO" ? 1 : 0;
@@ -127,19 +120,19 @@ export default function SolicitacoesTransporte() {
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
-      {/* Banner/cabeçalho */}
+    <div className="p-6 md:p-8 space-y-4">
+      {/* Banner/cabeçalho - agora com verde + azul */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div
-            className="px-5 py-3"
+            className="px-4 py-2"
             style={{
               background:
-                "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
+                "linear-gradient(90deg, #0F766E 0%, #1D4ED8 35%, #60A5FA 70%, #EFF6FF 100%)",
             }}
           >
-            <div className="w-full max-w-2xl bg-white/95 rounded-2xl shadow-md px-3 py-2 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+            <div className="w-full max-w-2xl bg-white/95 rounded-xl shadow-md px-3 py-2 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100">
                 <FileText className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex flex-col">
@@ -155,17 +148,17 @@ export default function SolicitacoesTransporte() {
         </CardContent>
       </Card>
 
-      {/* Filtros */}
+      {/* Filtros - fundo azul bem claro */}
       <Card className="border-none shadow-md overflow-hidden">
         <CardContent className="p-0">
           <div
-            className="px-4 py-2"
+            className="px-3 py-1.5"
             style={{
               background:
-                "linear-gradient(90deg, #165A2A 0%, #FDBA74 45%, #FDE68A 80%, #F9FAFB 100%)",
+                "linear-gradient(90deg, #DBEAFE 0%, #E5F0FF 45%, #F9FAFF 100%)",
             }}
           >
-            <div className="bg-white rounded-xl shadow-sm px-3 py-2 md:px-4 md:py-3">
+            <div className="bg-white rounded-lg shadow-sm px-3 py-2 md:px-4 md:py-2">
               <FiltrosTransporte
                 filtros={filtros}
                 onFiltrosChange={setFiltros}
