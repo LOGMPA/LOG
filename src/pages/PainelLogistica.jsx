@@ -260,11 +260,8 @@ export default function PainelLogistica() {
                 <span className="text-base md:text-lg font-bold text-white">
                   MacPonta Agro • Painel Logística 2026
                 </span>
-                <span className="text-sm md:text-base font-semibold text-emerald-100">
+                <span className="text-sm md:text-base font-semibold text-emerald-90">
                   Visão geral das operações de transporte solicitadas via Forms.
-                </span>
-                <span className="text-xs text-slate-800/80">
-                  Registre aqui os pedidos de MÁQUINAS e PEÇAS/FRACIONADOS.
                 </span>
               </div>
             </div>
