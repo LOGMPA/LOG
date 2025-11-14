@@ -224,7 +224,7 @@ export default function PainelLogistica() {
       </Card>
 
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Logística 2026</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">MacPonta Agro • Painel Logística 2026</h1>
         <p className="text-gray-600">Visão geral das operações de transporte solicitadas via Forms.</p>
       </div>
 
