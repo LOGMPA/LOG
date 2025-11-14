@@ -1,5 +1,5 @@
 import React from "react";
-import { Funnel, Calendar } from "lucide-react";
+import { Filter, Calendar } from "lucide-react"; // <= troquei Funnel por Filter
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import {
@@ -36,7 +36,7 @@ export default function FiltrosTransporte({ filtros, onFiltrosChange }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100">
-            <Funnel className="w-4 h-4 text-blue-600" />
+            <Filter className="w-4 h-4 text-blue-600" /> {/* aqui também */}
           </div>
           <span className="text-sm font-semibold text-slate-800">
             Filtros de Busca
