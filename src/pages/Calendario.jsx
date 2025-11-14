@@ -104,11 +104,33 @@ export default function Calendario() {
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      <div className="flex items-center gap-3 mb-2">
-        <CalendarIcon className="w-8 h-8 text-blue-600" />
-        <h1 className="text-3xl font-bold text-gray-900">Calendário</h1>
-      </div>
-      <p className="text-gray-600">Visão semanal e mensal de transportes</p>
+      {/* Banner do Calendário - mesmo "clima" do painel */}
+      <Card className="border-none shadow-lg overflow-hidden">
+        <CardContent className="p-0">
+          <div
+            className="px-5 py-4"
+            style={{
+              background:
+                "linear-gradient(90deg, #165A2A 0%, #FDBA74 40%, #FDE68A 75%, #F9FAFB 100%)",
+            }}
+          >
+            {/* Retângulo branco interno com ícone e textos */}
+            <div className="max-w-xl bg-white/95 rounded-2xl shadow-md px-4 py-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+                <CalendarIcon className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base md:text-lg font-extrabold text-slate-900">
+                  Calendário de Transportes
+                </span>
+                <span className="text-sm md:text-base text-slate-600">
+                  Visão semanal e mensal de transportes.
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* SEMANA ATUAL */}
       <Card className="border-none shadow-lg">
@@ -117,38 +139,65 @@ export default function Calendario() {
             Semana Atual - {format(segundaFeira, "dd/MM", { locale: ptBR })} a{" "}
             {format(sabado, "dd/MM", { locale: ptBR })}
           </CardTitle>
-          <p className="text-sm text-gray-600">Status: RECEBIDO, PROGRAMADO, EM ROTA</p>
+          <p className="text-sm text-gray-600">
+            Status: RECEBIDO, PROGRAMADO, EM ROTA
+          </p>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {diasSemana.map((dia) => {
               const solsDia = getSemana(dia);
-              const diaSemana = format(dia, "EEE", { locale: ptBR }).toUpperCase();
+              const diaSemana = format(dia, "EEE", {
+                locale: ptBR,
+              }).toUpperCase();
               const diaNumero = format(dia, "dd");
               return (
-                <div key={dia.toString()} className="bg-white rounded-lg border border-gray-200 overflow-visible">
+                <div
+                  key={dia.toString()}
+                  className="bg-white rounded-lg border border-gray-200 overflow-visible"
+                >
                   <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 text-center">
                     <p className="text-xs font-semibold">{diaSemana}</p>
                     <p className="text-2xl font-bold">{diaNumero}</p>
                   </div>
-                  {/* sem limite: todos os cards */}
                   <div className="p-3 space-y-2">
                     {solsDia.length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-4">Sem transportes</p>
+                      <p className="text-xs text-gray-400 text-center py-4">
+                        Sem transportes
+                      </p>
                     ) : (
                       solsDia.map((sol) => (
-                        <div key={sol.id} className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                        <div
+                          key={sol.id}
+                          className="bg-gray-50 rounded-lg p-2 border border-gray-200"
+                        >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap gap-1">
-                                {(sol.chassi_lista && sol.chassi_lista.length ? sol.chassi_lista : ["SEM CHASSI"]).map((c, i) => (
-                                  <Badge key={i} className="text-[10px] px-1.5 py-0 font-mono">{c}</Badge>
+                                {(sol.chassi_lista && sol.chassi_lista.length
+                                  ? sol.chassi_lista
+                                  : ["SEM CHASSI"]
+                                ).map((c, i) => (
+                                  <Badge
+                                    key={i}
+                                    className="text-[10px] px-1.5 py-0 font-mono"
+                                  >
+                                    {c}
+                                  </Badge>
                                 ))}
                               </div>
-                              <p className="text-[10px] text-gray-600 mt-1 break-words">{sol.nota}</p>
+                              <p className="text-[10px] text-gray-600 mt-1 break-words">
+                                {sol.nota}
+                              </p>
                             </div>
                             {sol.loc && (
-                              <a href={sol.loc} target="_blank" rel="noopener noreferrer" className="flex-shrink-0" title="Abrir no mapa">
+                              <a
+                                href={sol.loc}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-shrink-0"
+                                title="Abrir no mapa"
+                              >
                                 <MapPin className="w-3 h-3 text-blue-600" />
                               </a>
                             )}
@@ -167,26 +216,56 @@ export default function Calendario() {
       {/* MÊS ATUAL */}
       <Card className="border-none shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-green-50 to-emerald-50">
-          <CardTitle className="text-xl font-bold text-gray-900">Mês Atual - {format(hoje, "MMMM yyyy", { locale: ptBR })}</CardTitle>
+          <CardTitle className="text-xl font-bold text-gray-900">
+            Mês Atual -{" "}
+            {format(hoje, "MMMM yyyy", {
+              locale: ptBR,
+            })}
+          </CardTitle>
           <p className="text-sm text-gray-600">Status: CONCLUÍDO</p>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-7 gap-2">
             {["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"].map((lab) => (
-              <div key={lab} className="text-center text-xs font-semibold text-gray-600 py-2">{lab}</div>
+              <div
+                key={lab}
+                className="text-center text-xs font-semibold text-gray-600 py-2"
+              >
+                {lab}
+              </div>
             ))}
             {diasMes.map((dia) => {
               const solsDia = getMes(dia);
               const hojeKey = localKey(hoje);
               const isHoje = localKey(dia) === hojeKey;
               return (
-                <div key={dia.toString()} className={`min-h-[80px] rounded-lg border ${isHoje ? "bg-blue-50 border-blue-300" : "bg-white border-gray-200"}`}>
-                  <p className={`text-xs font-semibold mb-1 ${isHoje ? "text-blue-600" : "text-gray-700"}`}>{format(dia, "d")}</p>
+                <div
+                  key={dia.toString()}
+                  className={`min-h-[80px] rounded-lg border ${
+                    isHoje
+                      ? "bg-blue-50 border-blue-300"
+                      : "bg-white border-gray-200"
+                  }`}
+                >
+                  <p
+                    className={`text-xs font-semibold mb-1 ${
+                      isHoje ? "text-blue-600" : "text-gray-700"
+                    }`}
+                  >
+                    {format(dia, "d")}
+                  </p>
                   <div className="space-y-1 max-h-32 overflow-auto pr-1">
                     {solsDia.map((sol) => (
-                      <div key={sol.id} className="bg-green-100 rounded px-1 py-0.5" title={sol.nota}>
+                      <div
+                        key={sol.id}
+                        className="bg-green-100 rounded px-1 py-0.5"
+                        title={sol.nota}
+                      >
                         <p className="text-[9px] font-semibold text-green-800">
-                          {(sol.chassi_lista && sol.chassi_lista.length ? sol.chassi_lista : ["SEM CHASSI"]).join(", ")}
+                          {(sol.chassi_lista && sol.chassi_lista.length
+                            ? sol.chassi_lista
+                            : ["SEM CHASSI"]
+                          ).join(", ")}
                         </p>
                       </div>
                     ))}
