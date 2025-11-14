@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { useSolicitacoes } from "../hooks/useLogisticaBase";
+import { useLogisticaBase } from "../hooks/useLogisticaBase";
 import {
   format,
   startOfWeek,
