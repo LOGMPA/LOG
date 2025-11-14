@@ -16,9 +16,12 @@ import StatusCard from "../components/logistica/StatusCard";
 import SolicitacaoCard from "../components/logistica/SolicitacaoCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
+/* ====== LOGO ====== */
+import logisticaLogo from "../assets/ICONLOG.jpg";
+
 /* ====== LINKS DOS FORMULÁRIOS ====== */
-const FORM_FRETE_MAQUINA = "https://forms.office.com/r/SaYf3D9bz4"; // cole o link real
-const FORM_FRETE_PECAS   = "https://forms.office.com/r/A7wSsGC5fV"; // cole o link real
+const FORM_FRETE_MAQUINA = "https://forms.office.com/r/SaYf3D9bz4";
+const FORM_FRETE_PECAS = "https://forms.office.com/r/A7wSsGC5fV";
 
 /* ========= Datas locais (sem UTC) ========= */
 const parseBR = (s) => {
