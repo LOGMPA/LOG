@@ -82,14 +82,16 @@ export default function Calendario() {
     return cells;
   }, [inicioMes.getTime(), diasMes.length]);
 
-  /* ---------------- MAPA SEMANA (RECEBIDO/PROGRAMADO/EM ROTA) ---------------- */
+  /* ---------------- MAPA SEMANA (PROGRAMADO / PROGRAMADO (D) / EM ROTA) ---------------- */
 
   const mapaSemana = useMemo(() => {
     const m = new Map();
     for (const s of solicitacoes) {
       const base = s._status_base;
-      if (!["RECEBIDO", "PROGRAMADO", "EM ROTA"].includes(base)) continue;
-      if (s._status_up?.includes("(D)")) continue; // ignora demonstração
+
+      // Só entra no semanal:
+      // PROGRAMADO, PROGRAMADO (D) e EM ROTA
+      if (!["PROGRAMADO", "EM ROTA"].includes(base)) continue;
 
       const k = s._previsao_key || localKey(s.previsao_br || s.previsao);
       if (!k || !setSemanaKeys.has(k)) continue;
@@ -173,7 +175,7 @@ export default function Calendario() {
             {format(sabado, "dd/MM", { locale: ptBR })}
           </CardTitle>
           <p className="text-sm text-gray-700">
-            Status: RECEBIDO, PROGRAMADO, EM ROTA
+            Status: PROGRAMADO, PROGRAMADO (D), EM ROTA
           </p>
         </CardHeader>
         <CardContent className="p-6">
