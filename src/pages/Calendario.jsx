@@ -248,7 +248,7 @@ export default function Calendario() {
 
                               {sol.is_demo && (
                                 <div
-                                  className="w-4 h-4 rounded-sm bg-red-500 flex items-center justify-center"
+                                  className="w-4 h-4 rounded-sm bg-purple-500 flex items-center justify-center"
                                   title="Demonstração"
                                 >
                                   <span className="text-[9px] font-bold text-white">
