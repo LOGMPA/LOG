@@ -93,7 +93,13 @@ export default function Calendario() {
       // PROGRAMADO, PROGRAMADO (D) e EM ROTA
       if (!["PROGRAMADO", "EM ROTA"].includes(base)) continue;
 
-      const k = s._previsao_key || localKey(s.previsao_br || s.previsao);
+      // usa PREV como principal; se não tiver, cai para REAL; se ainda não tiver, tenta campos brutos
+      const dRef =
+        s._previsao_date ||
+        s._real_date ||
+        parseBR(s.previsao_br || s.previsao || s.real_br || s.real_raw);
+
+      const k = localKey(dRef);
       if (!k || !setSemanaKeys.has(k)) continue;
 
       if (!m.has(k)) m.set(k, []);
@@ -226,17 +232,31 @@ export default function Calendario() {
                                 {sol.nota}
                               </p>
                             </div>
-                            {sol.loc && (
-                              <a
-                                href={sol.loc}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-shrink-0"
-                                title="Abrir no mapa"
-                              >
-                                <MapPin className="w-3 h-3 text-blue-600" />
-                              </a>
-                            )}
+
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                              {sol.loc && (
+                                <a
+                                  href={sol.loc}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-shrink-0"
+                                  title="Abrir no mapa"
+                                >
+                                  <MapPin className="w-3 h-3 text-blue-600" />
+                                </a>
+                              )}
+
+                              {sol.is_demo && (
+                                <div
+                                  className="w-4 h-4 rounded-sm bg-red-500 flex items-center justify-center"
+                                  title="Demonstração"
+                                >
+                                  <span className="text-[9px] font-bold text-white">
+                                    D
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))
