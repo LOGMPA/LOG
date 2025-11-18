@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Calendar, FileText, CheckCircle, Presentation, Tractor } from "lucide-react";
+import { LayoutDashboard, Calendar, FileText, CheckCircle, Presentation, Tractor, Wallet } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarProvider, SidebarTrigger
@@ -12,6 +12,7 @@ const navigationItems = [
   { title: "Solicitações de Transporte", to: "/solicitacoes", icon: FileText },
   { title: "Transportes Concluídos", to: "/concluidos", icon: CheckCircle },
   { title: "Demonstrações", to: "/demos", icon: Presentation },
+  { title: "Painel de Custos", to: "/custos", icon: Wallet },
 ];
 
 export default function Layout({ children }) {
