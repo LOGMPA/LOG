@@ -1,7 +1,7 @@
 import fs from "fs";
 import * as XLSX from "xlsx";
 
-const workbook = XLSX.readFile("BASE.xlsx");
+const workbook = XLSX.readFile("public/data/BASE.xlsx");
 const sheet = workbook.Sheets["CUSTOS"];
 
 const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
