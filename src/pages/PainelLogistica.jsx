@@ -212,7 +212,7 @@ export default function PainelLogistica() {
     [solicitacoes]
   );
 
-  /* ========= Gráfico: Custos Normais vs Demonstrações (Concluídos) ========= */
+  /* ========= Gráfico: Custos: Transportes Regulares vs Demonstrações (Concluídos) ========= */
   const dadosCidadesColuna = useMemo(() => {
     const somaNormal = Object.fromEntries(CIDADES.map((c) => [c, 0]));
     const somaDemo = Object.fromEntries(CIDADES.map((c) => [c, 0]));
@@ -429,7 +429,7 @@ export default function PainelLogistica() {
               Custos Normais vs Demonstrações (Concluídos)
             </CardTitle>
             <p className="text-gray-600">
-              Usa <b>Custo por Filial</b>. Segmentos: Normal (verde) e Demonstração (amarelo).
+              Usa <b>Custo por Filial</b>. Segmentos: Regular (verde) e Demonstração (amarelo).
             </p>
           </div>
           <div className="flex items-center gap-3">
