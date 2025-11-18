@@ -19,6 +19,7 @@ export default function App() {
           <Route path="/solicitacoes" element={<SolicitacoesTransporte />} />
           <Route path="/concluidos" element={<TransportesConcluidos />} />
           <Route path="/demos" element={<Demonstracoes />} />
+          <Route path="/custos" element={<DashboardCustos />} />
           <Route path="*" element={<Navigate to="/painel" replace />} />
         </Routes>
       </Layout>
