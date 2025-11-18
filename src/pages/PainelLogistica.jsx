@@ -61,13 +61,13 @@ const CIDADES = [
 const MAP_CANON = new Map(CIDADES.map((c) => [NORM(c), c]));
 const canonCidade = (txt) => MAP_CANON.get(NORM(txt)) || null;
 
-/* ========= Cores (ajustadas p/ ficar mais harmônico) ========= */
-const COR_TERC = "#F59E0B";   // Terceiro - ambar mais suave
-const COR_PROP = "#15803D";   // Próprio - verde estilo John Deere
-const GRID_LIGHT = "#E2E8F0"; // grid cinza-claro
-const BADGE_BG = "#065F46";   // badge verde-escuro
+/* ========= Cores ========= */
+const COR_TERC = "#F59E0B"; // agora usado para Demonstração
+const COR_PROP = "#15803D"; // agora usado para Normal
+const GRID_LIGHT = "#E2E8F0";
+const BADGE_BG = "#065F46";
 const BADGE_TEXT = "#FFFFFF";
-const TOTAL_COLOR = "#022C22"; // total em verde bem escuro
+const TOTAL_COLOR = "#022C22";
 
 /* ========= Labels custom ========= */
 function QtdBadge({ viewBox, value }) {
@@ -147,8 +147,14 @@ export default function PainelLogistica() {
     },
   };
 
+  /* ========= Helper de Suspenso ========= */
+  const isSuspenso = (s) =>
+    typeof s._status_up === "string" &&
+    s._status_up.toUpperCase().includes("SUSPENSO");
+
+  /* ========= Contagem de status (agora inclui (D), exclui SUSPENSO) ========= */
   const contagemStatus = useMemo(() => {
-    const base = solicitacoes.filter((s) => !s._status_up?.includes("(D)"));
+    const base = solicitacoes.filter((s) => !isSuspenso(s));
     return {
       RECEBIDO: base.filter((s) => s._status_base === "RECEBIDO").length,
       PROGRAMADO: base.filter((s) => s._status_base === "PROGRAMADO").length,
@@ -157,12 +163,14 @@ export default function PainelLogistica() {
     };
   }, [solicitacoes]);
 
+  /* ========= Listas por status (inclui (D), exclui SUSPENSO) ========= */
   const recebidos = useMemo(
     () =>
       solicitacoes
         .filter(
           (s) =>
-            s._status_base === "RECEBIDO" && !s._status_up?.includes("(D)")
+            s._status_base === "RECEBIDO" &&
+            !isSuspenso(s)
         )
         .sort(
           (a, b) =>
@@ -177,7 +185,8 @@ export default function PainelLogistica() {
       solicitacoes
         .filter(
           (s) =>
-            s._status_base === "PROGRAMADO" && !s._status_up?.includes("(D)")
+            s._status_base === "PROGRAMADO" &&
+            !isSuspenso(s)
         )
         .sort(
           (a, b) =>
@@ -191,7 +200,9 @@ export default function PainelLogistica() {
     () =>
       solicitacoes
         .filter(
-          (s) => s._status_base === "EM ROTA" && !s._status_up?.includes("(D)")
+          (s) =>
+            s._status_base === "EM ROTA" &&
+            !isSuspenso(s)
         )
         .sort(
           (a, b) =>
@@ -201,13 +212,16 @@ export default function PainelLogistica() {
     [solicitacoes]
   );
 
+  /* ========= Gráfico: Custos Normais vs Demonstrações (Concluídos) ========= */
   const dadosCidadesColuna = useMemo(() => {
-    const somaProp = Object.fromEntries(CIDADES.map((c) => [c, 0]));
-    const somaTerc = Object.fromEntries(CIDADES.map((c) => [c, 0]));
-    const qtd = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const somaNormal = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const somaDemo = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const qtdNormal = Object.fromEntries(CIDADES.map((c) => [c, 0]));
+    const qtdDemo = Object.fromEntries(CIDADES.map((c) => [c, 0]));
 
     for (const s of solicitacoes) {
       if (!s._status_up?.includes("CONCL")) continue;
+      if (isSuspenso(s)) continue;
 
       const kMes = s._previsao_date
         ? monthKeyLocal(s._previsao_date)
@@ -219,20 +233,35 @@ export default function PainelLogistica() {
 
       const valorProp = Number(s.valor_prop || 0);
       const valorTerc = Number(s.valor_terc || 0);
+      const valorTotal = valorProp + valorTerc;
 
-      somaProp[cidade] += valorProp;
-      somaTerc[cidade] += valorTerc;
-      qtd[cidade] += 1;
+      const isDemo = s._status_up?.includes("(D)");
+
+      if (isDemo) {
+        somaDemo[cidade] += valorTotal;
+        qtdDemo[cidade] += 1;
+      } else {
+        somaNormal[cidade] += valorTotal;
+        qtdNormal[cidade] += 1;
+      }
     }
 
-    return CIDADES.map((c) => ({
-      cidade: c,
-      prop: somaProp[c] || 0,
-      terc: somaTerc[c] || 0,
-      total: (somaProp[c] || 0) + (somaTerc[c] || 0),
-      qtd: qtd[c] || 0,
-      zero: 0,
-    }));
+    return CIDADES.map((c) => {
+      const normal = somaNormal[c] || 0;
+      const demo = somaDemo[c] || 0;
+      const qtdN = qtdNormal[c] || 0;
+      const qtdD = qtdDemo[c] || 0;
+      return {
+        cidade: c,
+        normal,
+        demo,
+        total: normal + demo,
+        qtd: qtdN + qtdD,
+        qtdNormal: qtdN,
+        qtdDemo: qtdD,
+        zero: 0,
+      };
+    });
   }, [solicitacoes, mesRef]);
 
   return (
@@ -266,7 +295,7 @@ export default function PainelLogistica() {
               </div>
             </div>
 
-            {/* Lado direito: botões dos Forms (mesma largura) */}
+            {/* Lado direito: botões dos Forms */}
             <div className="flex flex-col gap-2 w-full md:w-80 justify-start md:items-end">
               <a
                 href={FORM_FRETE_MAQUINA}
@@ -392,16 +421,15 @@ export default function PainelLogistica() {
         </Card>
       </div>
 
-      {/* Gráfico mensal: Custos (Status Concluídos) */}
+      {/* Gráfico mensal: Custos Normais vs Demonstrações (Concluídos) */}
       <Card className="border-none shadow-lg">
         <CardHeader className="flex items-center justify-between gap-4">
           <div>
             <CardTitle className="text-xl font-bold text-gray-900">
-              Custos (Status Concluídos)
+              Custos Normais vs Demonstrações (Concluídos)
             </CardTitle>
             <p className="text-gray-600">
-              Usa <b>Custo por Filial</b>. Segmentos: Terceiro (amarelo) e Próprio
-              (verde).
+              Usa <b>Custo por Filial</b>. Segmentos: Normal (verde) e Demonstração (amarelo).
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -436,15 +464,15 @@ export default function PainelLogistica() {
                       `R$ ${Number(value || 0).toLocaleString("pt-BR")}`,
                       "Total",
                     ];
-                  if (name === "Terceiro")
+                  if (name === "Demonstração")
                     return [
                       `R$ ${Number(value || 0).toLocaleString("pt-BR")}`,
-                      "Terceiro",
+                      "Demonstração",
                     ];
-                  if (name === "Próprio")
+                  if (name === "Normal")
                     return [
                       `R$ ${Number(value || 0).toLocaleString("pt-BR")}`,
-                      "Próprio",
+                      "Normal",
                     ];
                   if (name === "Qtd") return [value, "Qtd"];
                   return [value, name];
@@ -452,20 +480,10 @@ export default function PainelLogistica() {
                 labelFormatter={(label) => `Cidade: ${label}`}
               />
 
-              <Bar dataKey="terc" name="Terceiro" stackId="v" fill={COR_TERC}>
+              {/* Normal */}
+              <Bar dataKey="normal" name="Normal" stackId="v" fill={COR_PROP}>
                 <LabelList
-                  dataKey="terc"
-                  position="inside"
-                  formatter={(v) =>
-                    v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : ""
-                  }
-                  fill="#FFFFFF"
-                  style={{ fontSize: 11, fontWeight: 700 }}
-                />
-              </Bar>
-              <Bar dataKey="prop" name="Próprio" stackId="v" fill={COR_PROP}>
-                <LabelList
-                  dataKey="prop"
+                  dataKey="normal"
                   position="inside"
                   formatter={(v) =>
                     v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : ""
@@ -475,6 +493,20 @@ export default function PainelLogistica() {
                 />
               </Bar>
 
+              {/* Demonstração */}
+              <Bar dataKey="demo" name="Demonstração" stackId="v" fill={COR_TERC}>
+                <LabelList
+                  dataKey="demo"
+                  position="inside"
+                  formatter={(v) =>
+                    v ? `R$ ${Number(v).toLocaleString("pt-BR")}` : ""
+                  }
+                  fill="#FFFFFF"
+                  style={{ fontSize: 11, fontWeight: 700 }}
+                />
+              </Bar>
+
+              {/* Layer invisível só para labels de Qtd e Total */}
               <Bar dataKey="zero" stackId="v" fill="transparent">
                 <LabelList dataKey="qtd" content={<QtdBadge />} />
                 <LabelList dataKey="total" content={<TotalLabel />} />
