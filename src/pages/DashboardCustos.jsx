@@ -13,7 +13,7 @@ export default function DashboardCustos() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Header no estilo do Calendário */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1800px] mx-auto px-6 lg:px-12 py-6">
+        <div className="max-w-[1800px] mx-auto px-6 lg:px-12 py-3">
           <Card className="border-none shadow-lg overflow-hidden">
             <CardContent className="p-0">
               <div
@@ -42,42 +42,46 @@ export default function DashboardCustos() {
         </div>
       </div>
 
-      {/* Conteúdo */}
-      <div className="max-w-[1800px] mx-auto px-6 lg:px-12 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm border border-gray-100">
+      {/* Conteúdo mais colado no header */}
+      <div className="max-w-[1800px] mx-auto px-6 lg:px-12 pt-3 pb-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-4"
+        >
+          <TabsList className="inline-flex h-12 items-center justify-center rounded-2xl bg-white p-1 shadow-sm border border-gray-100">
             <TabsTrigger
               value="maquinas"
-              className="inline-flex items-center justify-center gap-3 rounded-xl px-6 py-3 text-sm font-medium transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg"
             >
-              <Truck className="w-5 h-5" />
+              <Truck className="w-4 h-4" />
               <span>Custos Máquinas</span>
             </TabsTrigger>
             <TabsTrigger
               value="pecas"
-              className="inline-flex items-center justify-center gap-3 rounded-xl px-6 py-3 text-sm font-medium transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg"
             >
-              <Package className="w-5 h-5" />
+              <Package className="w-4 h-4" />
               <span>Custos Peças</span>
             </TabsTrigger>
             <TabsTrigger
               value="frota"
-              className="inline-flex items-center justify-center gap-3 rounded-xl px-6 py-3 text-sm font-medium transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg"
             >
-              <Wrench className="w-5 h-5" />
+              <Wrench className="w-4 h-4" />
               <span>Custos Frota</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="maquinas" className="space-y-6">
+          <TabsContent value="maquinas" className="space-y-4">
             <CustosMaquinas />
           </TabsContent>
 
-          <TabsContent value="pecas" className="space-y-6">
+          <TabsContent value="pecas" className="space-y-4">
             <CustosPecas />
           </TabsContent>
 
-          <TabsContent value="frota" className="space-y-6">
+          <TabsContent value="frota" className="space-y-4">
             <CustosFrota />
           </TabsContent>
         </Tabs>
