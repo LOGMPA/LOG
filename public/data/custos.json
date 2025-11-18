@@ -1,0 +1,17 @@
+{
+  "maquinas": {
+    "metaVsReal": [...],
+    "somaTotal": [...]
+  },
+  "pecas": {
+    "motoboyPorCidade": [...],
+    "custosMotoboy": [...],
+    "transportadoraPorCidade": [...],
+    "custosFreteiros": [...]
+  },
+  "frota": {
+    "vw": [...],
+    "daf": [...],
+    "aproveitamento": [...]
+  }
+}
