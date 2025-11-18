@@ -50,7 +50,6 @@ export default function CustosMaquinas() {
     async function fetchData() {
       try {
         const res = await loadCustosMaquinas();
-        // boa prática: logar uma vez pra conferir se os dados batem
         console.log("Custos Máquinas (bruto):", res);
         setData(res);
         setStatus("ok");
@@ -62,31 +61,15 @@ export default function CustosMaquinas() {
     fetchData();
   }, []);
 
-  if (status === "loading") {
-    return (
-      <div className="text-sm text-slate-500">
-        Carregando dados de custos de máquinas...
-      </div>
-    );
-  }
-
-  if (status === "error" || !data) {
-    return (
-      <div className="text-sm text-red-600">
-        Erro ao carregar dados de custos de máquinas.
-      </div>
-    );
-  }
-
+  // sempre declara hooks ANTES de qualquer return
   const {
-    grafico01MetaVsReal,
-    grafico02SomaCustos,
-    grafico03Terceiros,
-    grafico04Proprio,
-    grafico05Munck,
-  } = data;
+    grafico01MetaVsReal = [],
+    grafico02SomaCustos = [],
+    grafico03Terceiros = [],
+    grafico04Proprio = [],
+    grafico05Munck = [],
+  } = data || {};
 
-  // aplica filtro de linhas vazias pra cada dataset
   const dadosGrafico01 = useMemo(
     () => filterEmptyRows(grafico01MetaVsReal, ["meta", "mediaAtual"]),
     [grafico01MetaVsReal]
@@ -117,7 +100,6 @@ export default function CustosMaquinas() {
     [grafico05Munck]
   );
 
-  // label da pizza igual modelo (CIDADE + VALOR + %)
   const renderPieLabel = ({
     cx,
     cy,
@@ -148,6 +130,23 @@ export default function CustosMaquinas() {
       </text>
     );
   };
+
+  // AGORA os returns vêm DEPOIS de todos os hooks
+  if (status === "loading") {
+    return (
+      <div className="text-sm text-slate-500">
+        Carregando dados de custos de máquinas...
+      </div>
+    );
+  }
+
+  if (status === "error" || !data) {
+    return (
+      <div className="text-sm text-red-600">
+        Erro ao carregar dados de custos de máquinas.
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -275,7 +274,6 @@ export default function CustosMaquinas() {
                   style={{ fontSize: 11, fontWeight: 600, fill: "#000000" }}
                 />
               </Bar>
-              {/* QTD FRETE em cima das categorias */}
               <Bar
                 dataKey="qtdFrete"
                 name="QTD FRETE"
