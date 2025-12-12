@@ -1,10 +1,15 @@
 // src/components/auth/CustosGuard.jsx
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.jsx";
+import { Input } from "@/components/ui/input.jsx";
+import { Button } from "@/components/ui/button.jsx";
 import { LockKeyhole } from "lucide-react";
-import { useCustosAuth } from "@/hooks/useCustosAuth";
+import { useCustosAuth } from "@/hooks/useCustosAuth.jsx";
 
 export default function CustosGuard({ children }) {
   const { autorizado, validarSenha } = useCustosAuth();
@@ -40,12 +45,14 @@ export default function CustosGuard({ children }) {
             Painel de Custos.
           </p>
         </CardHeader>
+
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1">
               <label className="text-xs font-semibold text-slate-700">
                 Senha de acesso
               </label>
+
               <Input
                 type="password"
                 value={senha}
@@ -53,18 +60,21 @@ export default function CustosGuard({ children }) {
                 placeholder="Digite a senha"
                 className="text-sm"
               />
+
               {erro && (
                 <p className="text-xs text-red-600 font-semibold mt-1">
                   {erro}
                 </p>
               )}
             </div>
+
             <Button
               type="submit"
               className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold"
             >
               Entrar
             </Button>
+
             <p className="text-[11px] text-slate-500 text-center mt-1">
               A senha será pedida novamente apenas quando a página for recarregada.
             </p>
