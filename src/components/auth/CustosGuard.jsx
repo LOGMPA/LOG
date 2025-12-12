@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { LockKeyhole } from "lucide-react";
-import { useCustosAuth } from "@/hooks/useCustosAuth.jsx";
+import { useCustosAuth } from "@/hooks/useCustosAuth.js";
 
 export default function CustosGuard({ children }) {
   const { autorizado, validarSenha } = useCustosAuth();
